@@ -1,0 +1,109 @@
+# version: "3.8"
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.12
+    container_name: fastify-clickhouse
+    hostname: clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: app
+      CLICKHOUSE_USER: app
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_PASSWORD: secret
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+      # - ./infra/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+      # - ./infra/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+      # - ./infra/clickhouse/init-scripts:/docker-entrypoint-initdb.d
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:16
+    container_name: fastify-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hono_clean
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: fastify-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass password123
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # app:
+  #   build: .
+  #   container_name: fastify-app
+  #   restart: unless-stopped
+  #   environment:
+  #     DATABASE_URL: postgres://postgres:postgres@postgres:5432/elysia_db
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     REDIS_p: password123
+  #     REDIS_DB: 0
+  #     PORT: 3000
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   networks:
+  #     - app_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  clickhouse_data:
+    driver: local
+  clickhouse_logs:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

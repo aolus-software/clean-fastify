@@ -1,0 +1,63 @@
+{
+	"name": "clean-fastify",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"start:server": "bun run apps/api/serve.ts",
+		"dev:server": "bun run --hot --watch apps/api/serve.ts",
+		"build:server": "bun build apps/api/serve.ts --outdir=dist --target=node",
+		"start:worker": "bun run apps/worker/index.ts",
+		"dev:worker": "bun run --hot --watch apps/worker/index.ts",
+		"build:worker": "bun build apps/worker/index.ts --outdir=dist --target=node",
+		"start:api": "bun run apps/api/serve.ts",
+		"dev:api": "bun run --hot --watch apps/api/serve.ts",
+		"build:api": "bun build apps/api/serve.ts --outdir=dist --target=node",
+		"lint": "bun run eslint . --ext .ts,.js",
+		"format": "bun run prettier --write .",
+		"prepare": "husky install",
+		"dev:all": "concurrently --names \"server,worker\" --prefix-colors \"blue,magenta\" \"bun run dev:server\" \"bun run dev:worker\"",
+		"build:all": "concurrently --names \"server,worker\" --prefix-colors \"blue,magenta\" \"bun run build:server\" \"bun run build:worker\"",
+		"start:all": "concurrently --names \"server,worker\" --prefix-colors \"blue,magenta\" \"bun run start:server\" \"bun run start:worker\"",
+		"db:postgres:seed": "bun run ./infra/seed/index.ts",
+		"migrate:clickhouse": "bun run infra/clickhouse/scripts/migrate.ts migrate",
+		"migrate:clickhouse:status": "bun run infra/clickhouse/scripts/migrate.ts status"
+	},
+	"devDependencies": {
+		"@types/bcryptjs": "^3.0.0",
+		"@types/bun": "latest",
+		"@types/crypto-js": "^4.2.2",
+		"@types/node": "^24.7.2",
+		"@types/nodemailer": "^7.0.3",
+		"@types/pg": "^8.15.5",
+		"@typescript-eslint/eslint-plugin": "^8.15.0",
+		"@typescript-eslint/parser": "^8.15.0",
+		"concurrently": "^9.2.1",
+		"drizzle-kit": "^0.31.5",
+		"eslint": "^9.15.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.2.1",
+		"husky": "^9.1.7",
+		"prettier": "^3.3.3",
+		"tsx": "^4.20.6",
+		"typescript-eslint": "^8.46.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"fastify": "^5.6.1",
+    "@clickhouse/client": "^1.12.1",
+    "@vinejs/vine": "^4.0.1",
+    "bcryptjs": "^3.0.2",
+    "bullmq": "^5.61.0",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.18",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.6",
+    "ioredis": "^5.8.1",
+    "nodemailer": "^7.0.10",
+    "pg": "^8.16.3",
+    "pino": "^10.0.0"
+	}
+}

@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+bun.lockb
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode
+.idea
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker
+Dockerfile
+docker-compose.yml
