@@ -1,3 +1,4 @@
+import { DateToolkit } from "@toolkit/date";
 import pino from "pino";
 
 interface LoggerOptions {
@@ -81,7 +82,9 @@ const redactSensitive = (
 	return result;
 };
 
-export const createLogger = (options: LoggerOptions = {}) => {
+export const createLoggerConfig = (
+	options: LoggerOptions = {},
+): pino.LoggerOptions => {
 	const {
 		level = "info",
 		destination = "./storage/logs/app.log",
@@ -90,7 +93,7 @@ export const createLogger = (options: LoggerOptions = {}) => {
 
 	const sensitiveKeysLower = sensitiveKeys.map((k) => k.toLowerCase());
 
-	return pino({
+	return {
 		level,
 		transport: {
 			target: "pino/file",
@@ -100,9 +103,18 @@ export const createLogger = (options: LoggerOptions = {}) => {
 			},
 		},
 		formatters: {
-			level: (label) => ({ level: String(label).toUpperCase() }),
+			level: (label) => {
+				return { level: label.toUpperCase() };
+			},
+			log(object) {
+				return {
+					...object,
+					time: DateToolkit.getDateTimeInformative(DateToolkit.now()),
+				};
+			},
 		},
-		timestamp: () => `,"time":"${new Date().toISOString()}"`,
+		timestamp: () =>
+			`,"time":"${DateToolkit.getDateTimeInformative(DateToolkit.now())}"`,
 		redact: {
 			paths: defaultSensitiveKeys,
 			// censor: "***REDACTED***",
@@ -120,6 +132,10 @@ export const createLogger = (options: LoggerOptions = {}) => {
 				return method.apply(this, args);
 			},
 		},
-	});
+	};
+};
+
+export const createLogger = (options: LoggerOptions = {}) => {
+	return pino(createLoggerConfig(options));
 };
 export const logger = createLogger();

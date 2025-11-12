@@ -6,9 +6,10 @@ import fastifyRedis from "@fastify/redis";
 import corsPlugin from "packages/plugins/cors.plugin";
 import authPlugin from "packages/plugins/auth.plugin";
 import { errorHandler } from "./error/error.handler";
+import { createLoggerConfig } from "packages/logger/logger";
 
 const app = fastify({
-	logger: true,
+	logger: createLoggerConfig(),
 });
 
 // PLUGIN DECORATOR =====================================================
