@@ -1,9 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import fastifyPlugin from "fastify-plugin";
-import { and, eq, isNotNull } from "drizzle-orm";
-import { db, usersTable } from "@postgres/index";
 import { ResponseToolkit } from "@toolkit/response";
 import { UserInformationCacheKey } from "@cache/*";
+import { UserRepository } from "apps/api/repositories/user.repository";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 async function authPlugin(fastify: FastifyInstance) {
@@ -18,44 +17,30 @@ async function authPlugin(fastify: FastifyInstance) {
 				const cacheUser = await this.redis.get(cacheKey);
 
 				if (!cacheUser) {
-					const userData = await db
-						.select({
-							id: usersTable.id,
-							name: usersTable.name,
-							email: usersTable.email,
-						})
-						.from(usersTable)
-						.where(
-							and(
-								eq(usersTable.id, userJwt.id),
-								isNotNull(usersTable.email_verified_at),
-							),
-						)
-						.limit(1);
-
-					if (userData.length === 0) {
-						ResponseToolkit.unauthorized(
-							reply,
-							"User not found or email not verified",
-						);
-						return;
-					}
+					const userRepo = UserRepository();
+					const userData = await userRepo.UserInformation(userJwt.id);
 
 					await this.redis.set(
 						cacheKey,
-						JSON.stringify(userData[0]),
+						JSON.stringify(userData),
 						"EX",
 						3600 * 24,
 					);
-					req.user = userData[0];
+					req.user = userData;
 				} else {
 					req.user = JSON.parse(cacheUser);
 				}
-			} catch (err) {
-				reply.send(err);
+			} catch {
+				ResponseToolkit.unauthorized(reply, "Invalid or expired token");
+				return;
 			}
 		},
 	);
+
+	fastify.decorate("clearUserCache", async function (userId: string) {
+		const cacheKey = UserInformationCacheKey(userId);
+		await this.redis.del(cacheKey);
+	});
 }
 
 export default fastifyPlugin(authPlugin);

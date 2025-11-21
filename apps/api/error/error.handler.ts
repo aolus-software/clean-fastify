@@ -2,12 +2,24 @@ import { FastifyError, FastifyRequest, FastifyReply } from "fastify";
 import Fastify from "fastify";
 import { errors } from "@vinejs/vine";
 import { ResponseToolkit } from "@toolkit/response";
+import { HttpError, UnprocessableEntityError } from "./custom.errors";
 
 export const errorHandler = (
 	error: FastifyError,
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) => {
+	// Custom HTTP errors
+	if (error instanceof UnprocessableEntityError) {
+		ResponseToolkit.validationError(reply, error.validationErrors || []);
+		return;
+	}
+
+	if (error instanceof HttpError) {
+		ResponseToolkit.error(reply, error.message, error.statusCode);
+		return;
+	}
+
 	// Vine validation error
 	if (error instanceof errors.E_VALIDATION_ERROR) {
 		ResponseToolkit.validationError(
