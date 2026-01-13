@@ -1,12 +1,10 @@
 export class HttpError extends Error {
 	constructor(
-		// eslint-disable-next-line no-unused-vars
-		public statusCode: number,
-		message: string,
-		// eslint-disable-next-line no-unused-vars
-		public code?: string,
+		public _statusCode: number,
+		_message: string,
+		public _code?: string,
 	) {
-		super(message);
+		super(_message);
 		this.name = this.constructor.name;
 		Error.captureStackTrace(this, this.constructor);
 	}

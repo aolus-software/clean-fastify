@@ -1,7 +1,7 @@
 declare module "fastify" {
 	interface FastifyInstance {
-		requireRoles(roles: string[]): Promise<void>;
-		requiredPermissions(permissions: string[]): Promise<void>;
+		requireRoles(_roles: string[]): Promise<void>;
+		requiredPermissions(_permissions: string[]): Promise<void>;
 	}
 }
 
@@ -60,6 +60,7 @@ function requirePermissions(
 	}
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export default fp(async function (fastify) {
 	fastify.decorateRequest("requireRoles", requireRoles);
 	fastify.decorateRequest("requirePermissions", requirePermissions);

@@ -21,12 +21,12 @@ import { injectable } from "@packages/di";
 @injectable()
 export class AuthService {
 	constructor(
-		private userRepository: UserRepository,
-		private forgotPasswordRepository: ForgotPasswordRepository,
+		private _userRepository: UserRepository,
+		private _forgotPasswordRepository: ForgotPasswordRepository,
 	) {}
 
 	async login(email: string, password: string): Promise<UserInformation> {
-		const user = await this.userRepository.findByEmail(email);
+		const user = await this._userRepository.findByEmail(email);
 
 		if (user.email_verified_at === null) {
 			throw new UnprocessableEntityError("Validation error", [
@@ -56,7 +56,7 @@ export class AuthService {
 			]);
 		}
 
-		return await this.userRepository.UserInformation(user.id);
+		return await this._userRepository.UserInformation(user.id);
 	}
 
 	async register(payload: {
@@ -64,7 +64,7 @@ export class AuthService {
 		email: string;
 		password: string;
 	}): Promise<void> {
-		const user = await this.userRepository.db.query.users.findFirst({
+		const user = await this._userRepository.db.query.users.findFirst({
 			where: and(
 				eq(usersTable.email, payload.email),
 				isNull(usersTable.deleted_at),
@@ -114,7 +114,7 @@ export class AuthService {
 	}
 
 	async resendVerification(payload: { email: string }): Promise<void> {
-		const user = await this.userRepository.findByEmail(payload.email);
+		const user = await this._userRepository.findByEmail(payload.email);
 		if (!user) {
 			return;
 		}
@@ -179,7 +179,7 @@ export class AuthService {
 	}
 
 	async forgotPassword(email: string): Promise<void> {
-		const user = await this.userRepository.db.query.users.findFirst({
+		const user = await this._userRepository.db.query.users.findFirst({
 			where: eq(usersTable.email, email),
 		});
 		if (!user) {
@@ -187,7 +187,7 @@ export class AuthService {
 		}
 
 		const token = StrToolkit.random(255);
-		await this.forgotPasswordRepository.create({
+		await this._forgotPasswordRepository.create({
 			user_id: user.id,
 			token,
 		});
@@ -207,7 +207,7 @@ export class AuthService {
 
 	async resetPassword(token: string, newPassword: string): Promise<void> {
 		const passwordReset =
-			await this.forgotPasswordRepository.findByToken(token);
+			await this._forgotPasswordRepository.findByToken(token);
 		if (!passwordReset) {
 			throw new UnprocessableEntityError("Validation error", [
 				{
@@ -217,7 +217,7 @@ export class AuthService {
 			]);
 		}
 
-		const user = await this.userRepository.db.query.users.findFirst({
+		const user = await this._userRepository.db.query.users.findFirst({
 			where: eq(usersTable.id, passwordReset.user_id),
 		});
 		if (!user) {

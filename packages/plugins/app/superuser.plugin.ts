@@ -22,6 +22,7 @@ function requireSuperuser(this: FastifyRequest, reply: FastifyReply) {
 	}
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export default fp(async function (fastify) {
 	fastify.decorateRequest("requireSuperuser", requireSuperuser);
 });

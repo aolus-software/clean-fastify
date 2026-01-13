@@ -71,5 +71,11 @@
 		"reflect-metadata": "^0.2.2",
 		"tsyringe": "^4.10.0",
 		"zod": "^4.3.5"
+	},
+	"lint-staged": {
+		"*.{js,ts,jsx,tsx}": [
+			"eslint --fix",
+			"prettier --write"
+		]
 	}
 }

@@ -1,5 +1,5 @@
-make install
-make format
-make lint
-make db-generate
-make db-migrate
+bun install 
+bunx lint-staged
+make db-generate 
+make db-migrate 
+bun run build:all

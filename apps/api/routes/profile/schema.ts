@@ -6,7 +6,6 @@ import {
 	ValidationErrorResponseSchema,
 	ServerErrorResponseSchema,
 } from "@packages/toolkit/response-schema";
-import { UserInformation } from "@packages/index";
 
 // Body Schemas
 export const UpdateProfileBodySchema = z.object({

@@ -9,11 +9,10 @@ declare module "fastify" {
 }
 
 export default fp(
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async function (fastify: FastifyInstance) {
-		// Decorate Fastify instance with DI container
 		fastify.decorate("di", container);
-
-		// Helper method to resolve dependencies
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		fastify.decorate("resolve", <T>(token: any): T => {
 			return container.resolve<T>(token);
 		});

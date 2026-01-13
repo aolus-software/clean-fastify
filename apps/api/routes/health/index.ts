@@ -79,10 +79,17 @@ export default function (fastify: FastifyInstance) {
 			try {
 				await db.execute("SELECT 1");
 			} catch (error) {
+				let remarks = "";
+				if (error instanceof Error) {
+					remarks = error.message;
+				} else {
+					remarks = String(error);
+				}
+
 				serviceStatus.database = {
 					status: "unhealthy",
 					responseTime: 0,
-					remarks: `${error}`,
+					remarks,
 				};
 			}
 
@@ -99,10 +106,16 @@ export default function (fastify: FastifyInstance) {
 					remarks: "Redis cache is operational.",
 				};
 			} catch (error) {
+				let remarks = "";
+				if (error instanceof Error) {
+					remarks = error.message;
+				} else {
+					remarks = String(error);
+				}
 				serviceStatus.cache = {
 					status: "unhealthy",
 					responseTime: 0,
-					remarks: `${error}`,
+					remarks,
 				};
 				serviceStatus.redis = {
 					status: "unhealthy",

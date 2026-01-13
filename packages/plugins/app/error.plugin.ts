@@ -6,6 +6,7 @@ import {
 	UnprocessableEntityError,
 } from "packages/error/custom.errors";
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export default fp(async function (fastify) {
 	fastify.setErrorHandler(function (error, request, reply) {
 		// Custom HTTP errors

@@ -10,7 +10,7 @@ declare module "fastify" {
 	}
 
 	interface FastifyRequest {
-		authenticate(reply: FastifyReply): Promise<void>;
+		authenticate(_reply: FastifyReply): Promise<void>;
 		userInformation: UserInformation;
 	}
 }
@@ -44,6 +44,7 @@ async function authenticate(this: FastifyRequest, reply: FastifyReply) {
 }
 
 export default fp(
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async function (fastify) {
 		fastify.decorateRequest("authenticate", authenticate);
 	},
