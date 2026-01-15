@@ -12,6 +12,11 @@ import {
 } from "@packages/toolkit";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
+import {
+	CreatePermissionSchema,
+	PermissionSchema,
+	UpdatePermissionSchema,
+} from "./schema";
 
 export default function (fastify: FastifyInstance) {
 	// Apply authentication to all routes in this module using autohook
@@ -35,15 +40,7 @@ export default function (fastify: FastifyInstance) {
 					["name", "group", "created_at", "updated_at"],
 				),
 				response: {
-					200: createSuccessPaginationResponseSchema(
-						z.object({
-							id: z.string(),
-							name: z.string(),
-							group: z.string(),
-							created_at: z.date(),
-							updated_at: z.date(),
-						}),
-					),
+					200: createSuccessPaginationResponseSchema(PermissionSchema),
 					400: BadRequestResponseSchema,
 					401: UnauthorizedResponseSchema,
 					403: ForbiddenResponseSchema,
@@ -71,12 +68,7 @@ export default function (fastify: FastifyInstance) {
 				tags: ["Settings/Permission"],
 				description: "Create a new permission. Requires superuser role.",
 				security: [{ BearerAuth: [] }],
-				body: z.object({
-					name: z
-						.array(z.string().min(3).max(100))
-						.describe("Permission name(s)"),
-					group: z.string().min(3).max(100).describe("Permission group"),
-				}),
+				body: CreatePermissionSchema,
 				response: {
 					201: createSuccessResponseSchema(z.object({})),
 					400: BadRequestResponseSchema,
@@ -114,15 +106,7 @@ export default function (fastify: FastifyInstance) {
 					permissionId: z.string().describe("Permission ID"),
 				}),
 				response: {
-					200: createSuccessResponseSchema(
-						z.object({
-							id: z.string(),
-							name: z.string(),
-							group: z.string(),
-							created_at: z.date(),
-							updated_at: z.date(),
-						}),
-					),
+					200: createSuccessResponseSchema(PermissionSchema),
 					400: BadRequestResponseSchema,
 					401: UnauthorizedResponseSchema,
 					403: ForbiddenResponseSchema,
@@ -158,10 +142,7 @@ export default function (fastify: FastifyInstance) {
 				params: z.object({
 					permissionId: z.string().describe("Permission ID"),
 				}),
-				body: z.object({
-					name: z.string().min(3).max(100).describe("Permission name"),
-					group: z.string().min(3).max(100).describe("Permission group"),
-				}),
+				body: UpdatePermissionSchema,
 				response: {
 					200: createSuccessResponseSchema(z.object({})),
 					400: BadRequestResponseSchema,

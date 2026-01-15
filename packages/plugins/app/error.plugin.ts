@@ -2,13 +2,7 @@ import { ResponseToolkit } from "@toolkit/response";
 import fp from "fastify-plugin";
 import Fastify from "fastify";
 import {
-	BadRequestError,
-	ConflictError,
-	ForbiddenError,
 	HttpError,
-	InternalServerError,
-	NotFoundError,
-	UnauthorizedError,
 	UnprocessableEntityError,
 } from "packages/error/custom.errors";
 
