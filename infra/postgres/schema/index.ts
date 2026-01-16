@@ -1,21 +1,22 @@
 import {
+	email_verificationsRelations,
 	email_verificationsTable,
+} from "./email_verification";
+import {
+	password_reset_tokensRelations,
 	password_reset_tokensTable,
-	permissionsTable,
-	role_permissionsTable,
-	rolesTable,
-	user_rolesTable,
-	usersTable,
-} from "..";
-import { email_verificationsRelations } from "./email_verification";
-import { password_reset_tokensRelations } from "./password_reset_token";
+} from "./password_reset_token";
 import {
 	permissionsRelations,
+	permissionsTable,
 	role_permissionsRelations,
+	role_permissionsTable,
 	rolesRelations,
+	rolesTable,
 	user_rolesRelations,
+	user_rolesTable,
 } from "./rbac";
-import { usersRelations } from "./user";
+import { usersRelations, usersTable } from "./user";
 
 export const schema = {
 	// Tables
@@ -37,7 +38,12 @@ export const schema = {
 	password_reset_tokensRelations,
 };
 
-export * from "./email_verification";
-export * from "./password_reset_token";
-export * from "./rbac";
-export * from "./user";
+export {
+	usersTable,
+	rolesTable,
+	permissionsTable,
+	role_permissionsTable,
+	user_rolesTable,
+	email_verificationsTable,
+	password_reset_tokensTable,
+};
