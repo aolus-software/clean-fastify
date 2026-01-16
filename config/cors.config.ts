@@ -1,3 +1,14 @@
+import { cleanEnv, str, num, bool } from "envalid";
+
+const env = cleanEnv(process.env, {
+	CORS_ORIGIN: str({ default: "*" }),
+	CORS_METHODS: str({ default: "GET,HEAD,PUT,PATCH,POST,DELETE" }),
+	CORS_ALLOWED_HEADERS: str({ default: "Content-Type,Authorization" }),
+	CORS_EXPOSED_HEADERS: str({ default: "" }),
+	CORS_MAX_AGE: num({ default: 86400 }),
+	CORS_CREDENTIALS: bool({ default: false }),
+});
+
 type CorsConfigType = {
 	origin: string;
 	methods: string[];
@@ -8,18 +19,14 @@ type CorsConfigType = {
 };
 
 export const corsConfig: CorsConfigType = {
-	origin: process.env.CORS_ORIGIN || "*",
-	methods: process.env.CORS_METHODS
-		? process.env.CORS_METHODS.split(",").map((method) => method.trim())
-		: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
-	allowedHeaders: process.env.CORS_ALLOWED_HEADERS
-		? process.env.CORS_ALLOWED_HEADERS.split(",").map((header) => header.trim())
-		: ["Content-Type", "Authorization"],
-	exposedHeaders: process.env.CORS_EXPOSED_HEADERS
-		? process.env.CORS_EXPOSED_HEADERS.split(",").map((header) => header.trim())
+	origin: env.CORS_ORIGIN,
+	methods: env.CORS_METHODS.split(",").map((method) => method.trim()),
+	allowedHeaders: env.CORS_ALLOWED_HEADERS.split(",").map((header) =>
+		header.trim(),
+	),
+	exposedHeaders: env.CORS_EXPOSED_HEADERS
+		? env.CORS_EXPOSED_HEADERS.split(",").map((header) => header.trim())
 		: [],
-	maxAge: process.env.CORS_MAX_AGE
-		? parseInt(process.env.CORS_MAX_AGE, 10)
-		: 86400, // Default to 24 hours
-	credentials: process.env.CORS_CREDENTIALS === "true",
+	maxAge: env.CORS_MAX_AGE,
+	credentials: env.CORS_CREDENTIALS,
 };

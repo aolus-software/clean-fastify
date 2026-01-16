@@ -1,3 +1,14 @@
+import { cleanEnv, str, num, bool } from "envalid";
+
+const env = cleanEnv(process.env, {
+	MAIL_HOST: str({ default: "smtp.example.com" }),
+	MAIL_PORT: num({ default: 587 }),
+	MAIL_SECURE: bool({ default: false }),
+	MAIL_FROM: str({ default: "Elysia <your_email@example.com>" }),
+	MAIL_USER: str({ default: "your_email@example.com" }),
+	MAIL_PASS: str({ default: "your_email_password" }),
+});
+
 interface IMailConfig {
 	host: string;
 	port: number;
@@ -10,12 +21,12 @@ interface IMailConfig {
 }
 
 export const MailConfig: IMailConfig = {
-	host: process.env.MAIL_HOST || "smtp.example.com",
-	port: process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT, 10) : 587,
-	secure: process.env.MAIL_SECURE === "true",
-	from: process.env.MAIL_FROM || "Elysia <your_email@example.com>",
+	host: env.MAIL_HOST,
+	port: env.MAIL_PORT,
+	secure: env.MAIL_SECURE,
+	from: env.MAIL_FROM,
 	auth: {
-		user: process.env.MAIL_USER || "your_email@example.com",
-		pass: process.env.MAIL_PASS || "your_email_password",
+		user: env.MAIL_USER,
+		pass: env.MAIL_PASS,
 	},
 };

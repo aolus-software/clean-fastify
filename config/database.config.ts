@@ -1,3 +1,15 @@
+import { cleanEnv, str, num } from "envalid";
+
+const env = cleanEnv(process.env, {
+	DATABASE_URL: str({
+		default: "postgres://user:password@localhost:5432/mydb",
+	}),
+	DB_POOL_MIN: num({ default: 2 }),
+	DB_POOL_MAX: num({ default: 10 }),
+	DB_IDLE_TIMEOUT: num({ default: 30000 }),
+	DB_CONNECTION_TIMEOUT: num({ default: 5000 }),
+});
+
 interface IDatabaseConfig {
 	url: string;
 	pool: {
@@ -9,12 +21,11 @@ interface IDatabaseConfig {
 }
 
 export const DatabaseConfig: IDatabaseConfig = {
-	url:
-		process.env.DATABASE_URL || "postgres://user:password@localhost:5432/mydb",
+	url: env.DATABASE_URL,
 	pool: {
-		min: Number(process.env.DB_POOL_MIN) || 2,
-		max: Number(process.env.DB_POOL_MAX) || 10,
-		idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT) || 30000,
-		connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT) || 5000,
+		min: env.DB_POOL_MIN,
+		max: env.DB_POOL_MAX,
+		idleTimeoutMillis: env.DB_IDLE_TIMEOUT,
+		connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT,
 	},
 };
