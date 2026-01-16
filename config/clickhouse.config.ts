@@ -1,3 +1,12 @@
+import { cleanEnv, str, url } from "envalid";
+
+const env = cleanEnv(process.env, {
+	CLICKHOUSE_HOST: url({ default: "http://localhost:8123" }),
+	CLICKHOUSE_USER: str({ default: "default" }),
+	CLICKHOUSE_PASSWORD: str({ default: "" }),
+	CLICKHOUSE_DATABASE: str({ default: "default" }),
+});
+
 export interface IClickHouseConfig {
 	host: string;
 	user: string;
@@ -6,8 +15,8 @@ export interface IClickHouseConfig {
 }
 
 export const clickhouseConfig: IClickHouseConfig = {
-	host: process.env.CLICKHOUSE_HOST || "http://localhost:8123",
-	user: process.env.CLICKHOUSE_USER || "default",
-	password: process.env.CLICKHOUSE_PASSWORD || "",
-	database: process.env.CLICKHOUSE_DATABASE || "default",
+	host: env.CLICKHOUSE_HOST,
+	user: env.CLICKHOUSE_USER,
+	password: env.CLICKHOUSE_PASSWORD,
+	database: env.CLICKHOUSE_DATABASE,
 };

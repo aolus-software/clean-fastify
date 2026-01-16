@@ -1,3 +1,23 @@
+import { cleanEnv, str, num, url } from "envalid";
+
+const env = cleanEnv(process.env, {
+	APP_NAME: str({ default: "Hono App" }),
+	APP_PORT: num({ default: 3000 }),
+	APP_URL: url({ default: "http://localhost:3000" }),
+	APP_ENV: str({
+		default: "development",
+		choices: ["development", "staging", "production"],
+	}),
+	APP_TIMEZONE: str({ default: "UTC" }),
+	APP_KEY: str({ default: "your-app-key" }),
+	APP_JWT_SECRET: str({ default: "jwt-secret" }),
+	APP_JWT_EXPIRES_IN: num({ default: 3600 }),
+	APP_JWT_REFRESH_SECRET: str({ default: "jwt-refresh-secret" }),
+	APP_JWT_REFRESH_EXPIRES_IN: num({ default: 604800 }),
+	LOG_LEVEL: str({ default: "info", choices: ["info", "warn", "debug"] }),
+	CLIENT_URL: url({ default: "http://localhost:3000" }),
+});
+
 interface IAppConfig {
 	APP_NAME: string;
 	APP_PORT: number;
@@ -18,24 +38,16 @@ interface IAppConfig {
 }
 
 export const AppConfig: IAppConfig = {
-	APP_NAME: process.env.APP_NAME || "Hono App",
-	APP_PORT: Number(process.env.APP_PORT) || 3000,
-	APP_URL: process.env.APP_URL || "http://localhost:3000",
-	APP_ENV: (process.env.APP_ENV || "development") as
-		| "development"
-		| "staging"
-		| "production",
-	APP_TIMEZONE: process.env.APP_TIMEZONE || "UTC",
-	APP_KEY: process.env.APP_KEY || "your-app-key",
-
-	APP_JWT_SECRET: process.env.APP_JWT_SECRET || "jwt-secret",
-	APP_JWT_EXPIRES_IN: Number(process.env.APP_JWT_EXPIRES_IN) || 3600,
-	APP_JWT_REFRESH_SECRET:
-		process.env.APP_JWT_REFRESH_SECRET || "jwt-refresh-secret",
-	APP_JWT_REFRESH_EXPIRES_IN:
-		Number(process.env.APP_JWT_REFRESH_EXPIRES_IN) || 604800,
-
-	LOG_LEVEL: (process.env.LOG_LEVEL || "info") as "info" | "warn" | "debug",
-
-	CLIENT_URL: process.env.CLIENT_URL || "http://localhost:3000",
+	APP_NAME: env.APP_NAME,
+	APP_PORT: env.APP_PORT,
+	APP_URL: env.APP_URL,
+	APP_ENV: env.APP_ENV,
+	APP_TIMEZONE: env.APP_TIMEZONE,
+	APP_KEY: env.APP_KEY,
+	APP_JWT_SECRET: env.APP_JWT_SECRET,
+	APP_JWT_EXPIRES_IN: env.APP_JWT_EXPIRES_IN,
+	APP_JWT_REFRESH_SECRET: env.APP_JWT_REFRESH_SECRET,
+	APP_JWT_REFRESH_EXPIRES_IN: env.APP_JWT_REFRESH_EXPIRES_IN,
+	LOG_LEVEL: env.LOG_LEVEL,
+	CLIENT_URL: env.CLIENT_URL,
 };
