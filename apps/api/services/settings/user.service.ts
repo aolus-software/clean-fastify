@@ -10,20 +10,24 @@ import { db, rolesTable } from "@postgres/index";
 import { and, eq, inArray, isNull, not } from "drizzle-orm";
 import { usersTable } from "@infra/postgres";
 import { Hash } from "@security/hash";
+import { injectable } from "tsyringe";
 
-export const UserService = {
-	findAll: async (
+@injectable()
+export class UserService {
+	constructor(private readonly _userRepository: UserRepository) {}
+
+	async findAll(
 		queryParam: DatatableType,
-	): Promise<PaginationResponse<UserList>> => {
-		return await UserRepository().findAll(queryParam);
-	},
+	): Promise<PaginationResponse<UserList>> {
+		return await this._userRepository.findAll(queryParam);
+	}
 
-	create: async (data: {
+	async create(data: {
 		name: string;
 		email: string;
 		password: string;
 		roleIds: string[];
-	}): Promise<void> => {
+	}): Promise<void> {
 		const isEmailExists = await db.query.users.findFirst({
 			where: and(
 				eq(usersTable.email, data.email),
@@ -59,19 +63,19 @@ export const UserService = {
 		}
 
 		await db.transaction(async (tx) => {
-			await UserRepository().create(data, tx);
+			await this._userRepository.create(data, tx);
 		});
-	},
+	}
 
-	detail: async (userId: string): Promise<UserDetail> => {
-		return await UserRepository().getDetail(userId);
-	},
+	async detail(userId: string): Promise<UserDetail> {
+		return await this._userRepository.getDetail(userId);
+	}
 
-	update: async (
+	async update(
 		id: string,
 		data: { name: string; email: string; roleIds: string[] },
-	): Promise<void> => {
-		const isEmailExists = await UserRepository().db.query.users.findFirst({
+	): Promise<void> {
+		const isEmailExists = await this._userRepository.db.query.users.findFirst({
 			where: and(
 				eq(usersTable.email, data.email),
 				isNull(usersTable.deleted_at),
@@ -103,20 +107,20 @@ export const UserService = {
 		}
 
 		await db.transaction(async (tx) => {
-			await UserRepository().update(id, data, tx);
+			await this._userRepository.update(id, data, tx);
 		});
-	},
+	}
 
-	delete: async (userId: string): Promise<void> => {
+	async delete(userId: string): Promise<void> {
 		await db.transaction(async (tx) => {
-			await UserRepository().delete(userId, tx);
+			await this._userRepository.delete(userId, tx);
 		});
-	},
+	}
 
-	resetPassword: async (
+	async resetPassword(
 		userId: string,
 		data: { password: string },
-	): Promise<void> => {
+	): Promise<void> {
 		await db.transaction(async (tx) => {
 			await tx
 				.update(usersTable)
@@ -125,5 +129,5 @@ export const UserService = {
 				})
 				.where(eq(usersTable.id, userId));
 		});
-	},
-};
+	}
+}

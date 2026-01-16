@@ -8,18 +8,26 @@ import {
 	RoleList,
 	RoleRepository,
 } from "@infra/postgres/repositories";
+import { injectable } from "tsyringe";
 
-export const RoleService = {
-	findAll: async (
+@injectable()
+export class RoleService {
+	constructor(private _roleRepository: RoleRepository) {}
+
+	async findAll(
 		queryParam: DatatableType,
-	): Promise<PaginationResponse<RoleList>> => {
-		return await RoleRepository().findAll(queryParam);
-	},
+	): Promise<PaginationResponse<RoleList>> {
+		return await this._roleRepository.findAll(queryParam);
+	}
 
-	create: async (data: {
+	async create(data: {
 		name: string;
-		permissionIds: string[];
-	}): Promise<void> => {
+		permissionIds?: string[];
+	}): Promise<void> {
+		if (!data.permissionIds) {
+			data.permissionIds = [];
+		}
+
 		// validate the permissions ids
 		const validPermissions = await db
 			.select()
@@ -36,18 +44,22 @@ export const RoleService = {
 		}
 
 		await db.transaction(async (tx) => {
-			await RoleRepository().create(data, tx);
+			await this._roleRepository.create(data, tx);
 		});
-	},
+	}
 
-	detail: async (roleId: string): Promise<RoleDetail> => {
-		return await RoleRepository().getDetail(roleId);
-	},
+	async detail(roleId: string): Promise<RoleDetail> {
+		return await this._roleRepository.getDetail(roleId);
+	}
 
-	update: async (
+	async update(
 		id: string,
-		data: { name: string; permissionIds: string[] },
-	): Promise<void> => {
+		data: { name: string; permissionIds?: string[] },
+	): Promise<void> {
+		if (!data.permissionIds) {
+			data.permissionIds = [];
+		}
+
 		// validate the permissions ids
 		const validPermissions = await db
 			.select()
@@ -64,13 +76,13 @@ export const RoleService = {
 		}
 
 		await db.transaction(async (tx) => {
-			await RoleRepository().update(id, data, tx);
+			await this._roleRepository.update(id, data, tx);
 		});
-	},
+	}
 
-	delete: async (roleId: string): Promise<void> => {
+	async delete(roleId: string): Promise<void> {
 		await db.transaction(async (tx) => {
-			await RoleRepository().delete(roleId, tx);
+			await this._roleRepository.delete(roleId, tx);
 		});
-	},
-};
+	}
+}

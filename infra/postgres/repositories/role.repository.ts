@@ -10,15 +10,15 @@ import { injectable } from "tsyringe";
 export type RoleList = {
 	id: string;
 	name: string;
-	createdAt: Date;
-	updatedAt: Date;
+	created_at: Date;
+	updated_at: Date;
 };
 
 export type RoleDetail = {
 	id: string;
 	name: string;
-	createdAt: Date;
-	updatedAt: Date;
+	created_at: Date;
+	updated_at: Date;
 	permissions: {
 		group: string;
 		names: {
@@ -96,7 +96,12 @@ export class RoleRepository {
 		});
 		const totalCount = await database.$count(rolesTable, finalWhereCondition);
 		return {
-			data: roles,
+			data: roles.map((role) => ({
+				id: role.id,
+				name: role.name,
+				created_at: role.createdAt,
+				updated_at: role.updatedAt,
+			})),
 			meta: {
 				page,
 				limit,
@@ -108,7 +113,7 @@ export class RoleRepository {
 	async create(
 		data: {
 			name: string;
-			permissionIds: string[];
+			permissionIds?: string[];
 		},
 		tx?: DbTransaction,
 	): Promise<void> {
@@ -135,7 +140,7 @@ export class RoleRepository {
 			.returning({ id: rolesTable.id })
 			.execute();
 
-		if (data.permissionIds.length > 0) {
+		if (data.permissionIds && data.permissionIds.length > 0) {
 			const rolePermissions = data.permissionIds.map((permissionId) => ({
 				roleId: role[0].id,
 				permissionId,
@@ -187,8 +192,8 @@ export class RoleRepository {
 		return {
 			id: role.id,
 			name: role.name,
-			createdAt: role.createdAt,
-			updatedAt: role.updatedAt,
+			created_at: role.createdAt,
+			updated_at: role.updatedAt,
 			permissions: allPermissions.reduce(
 				(
 					acc: {
@@ -224,7 +229,7 @@ export class RoleRepository {
 
 	async update(
 		id: string,
-		data: { name: string; permissionIds: string[] },
+		data: { name: string; permissionIds?: string[] },
 		tx?: DbTransaction,
 	): Promise<void> {
 		const database = tx || this.dbInstance;
@@ -263,7 +268,7 @@ export class RoleRepository {
 			.where(eq(role_permissionsTable.roleId, id))
 			.execute();
 
-		if (data.permissionIds.length > 0) {
+		if (data.permissionIds && data.permissionIds.length > 0) {
 			const rolePermissions = data.permissionIds.map((permissionId) => ({
 				roleId: id,
 				permissionId,
