@@ -30,42 +30,6 @@
 		// "rootDir": "./",                                  /* Specify the root folder within your source files. */
 		"moduleResolution": "bundler" /* Specify how TypeScript looks up a file from a given module specifier. */,
 		"baseUrl": "." /* Specify the base directory to resolve non-relative module names. */,
-		"paths": {
-			"@app/*": ["apps/*"],
-			"@api/*": ["apps/api/*"],
-			"@worker/*": ["apps/worker/*"],
-
-			"@packages/*": ["packages/*"],
-			"@packages": ["packages/index.ts"],
-
-			"@config/*": ["config/*"],
-			"@config": ["config/index.ts"],
-
-			"@plugins/*": ["packages/plugins/*"],
-			"@plugins": ["packages/plugins/index.ts"],
-
-			"@error/*": ["packages/error/*"],
-			"@error": ["packages/error"],
-
-			"@infra/*": ["infra/*"],
-			"@infra": ["infra/index.ts"],
-
-			"@db/*": ["infra/db/*"],
-			"@cache/*": ["packages/cache/*"],
-			"@event/*": ["packages/event/*"],
-
-			"@postgres/*": ["infra/postgres/*"],
-			"@postgres": ["infra/postgres/index.ts"],
-
-			"@toolkit/*": ["packages/toolkit/*"],
-			"@toolkit": ["packages/toolkit/index.ts"],
-
-			"@security/*": ["packages/security/*"],
-			"@security": ["packages/security/index.ts"],
-
-			"@default/*": ["packages/default/*"],
-			"@default": ["packages/default/index.ts"]
-		},
 		/* Specify a set of entries that re-map imports to additional lookup locations. */ // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
 		// "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
 		"types": [
@@ -139,15 +103,32 @@
 
 		/* Completeness */
 		// "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-		"skipLibCheck": true /* Skip type checking all .d.ts files. */
+		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
+
+		"paths": {
+			"@/*": ["src/*"],
+			"@libs/*": ["./src/libs/*"],
+			"@libs": ["./src/libs", "./src/libs/index.ts"],
+			"@cache/*": ["./src/libs/cache/*"],
+			"@cache": ["./src/libs/cache", "./src/libs/cache/index.ts"],
+			"@config/*": ["./src/libs/config/*"],
+			"@config": ["./src/libs/config", "./src/libs/config/index.ts"],
+			"@database/*": ["./src/libs/database/*"],
+			"@database": ["./src/libs/database", "./src/libs/database/index.ts"],
+			"@fastify-libs/*": ["./src/libs/fastify/*"],
+			"@fastify-libs": ["./src/libs/fastify", "./src/libs/fastify/index.ts"],
+			"@utils/*": ["./src/libs/utils/*"],
+			"@utils": ["./src/libs/utils", "./src/libs/utils/index.ts"],
+			"@bull/*": ["./src/bull/*"],
+			"@bull": ["./src/bull", "./src/bull/index.ts"],
+			"@types/*": ["./src/libs/types/*"],
+			"@types": ["./src/libs/types", "./src/libs/types/index.ts"],
+			"@routes/*": ["./src/routes/*"],
+			"@routes": ["./src/routes", "./src/routes/index.ts"],
+			"@services/*": ["./src/services/*"],
+			"@services": ["./src/services", "./src/services/index.ts"]
+		}
 	},
-	"include": [
-		"apps/**/*",
-		"config/**/*",
-		"infra/**/*",
-		"packages/**/*",
-		"types/**/*",
-		"drizzle.config.ts"
-	],
+	"include": ["src", "eslint.config.mjs", "drizzle.config.ts"],
 	"exclude": ["node_modules", "dist"]
 }

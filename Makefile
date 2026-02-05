@@ -70,13 +70,13 @@ format:
 	bun run format
 
 db-seed:
-	bun run infra/seed/index.ts
+	bun run ./src/libs/database/seed/index.ts
 
 migrate-clickhouse:
-	bun run infra/clickhouse/scripts/migrate.ts migrate
+	bun run ./src/libs/database/clickhouse/scripts/migrate.ts migrate
 
 migrate-clickhouse-status:
-	bun run infra/clickhouse/scripts/migrate.ts status
+	bun run ./src/libs/database/clickhouse/scripts/migrate.ts status
 
 db-generate:
 	bunx --bun drizzle-kit generate
