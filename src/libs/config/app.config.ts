@@ -1,4 +1,4 @@
-import { cleanEnv, str, num, url } from "envalid";
+import { cleanEnv, num, str, url } from "envalid";
 
 const env = cleanEnv(process.env, {
 	APP_NAME: str({ default: "Hono App" }),

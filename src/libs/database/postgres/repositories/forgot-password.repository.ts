@@ -1,7 +1,8 @@
 import { db, password_reset_tokensTable } from "@database";
-import { eq } from "drizzle-orm";
-import { DbTransaction } from ".";
 import { injectable } from "@fastify-libs";
+import { eq } from "drizzle-orm";
+
+import { DbTransaction } from ".";
 
 @injectable()
 export class ForgotPasswordRepository {

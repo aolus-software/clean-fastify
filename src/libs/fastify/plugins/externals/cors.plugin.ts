@@ -1,6 +1,6 @@
+import { corsConfig } from "@config";
 import fastifyCors from "@fastify/cors";
 import fp from "fastify-plugin";
-import { corsConfig } from "@config";
 
 export default fp(
 	async function (fastify) {

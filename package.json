@@ -7,23 +7,27 @@
 		"name": "Aolus Software"
 	},
 	"scripts": {
-		"dev:api": "bun --watch src/serve.ts",
-		"dev:server": "bun --watch src/serve.ts",
-		"dev:worker": "bun --watch src/bull/index.ts",
-		"dev:all": "concurrently \"bun run dev:server\" \"bun run dev:worker\"",
-		"build:api": "bun build src/serve.ts --outdir ./dist/api --target bun",
-		"build:server": "bun build src/serve.ts --outdir ./dist/server --target bun",
-		"build:worker": "bun build src/bull/index.ts --outdir ./dist/worker --target bun",
-		"build:all": "concurrently \"bun run build:server\" \"bun run build:worker\"",
-		"start:api": "NODE_ENV=production bun dist/api/serve.js",
-		"start:server": "NODE_ENV=production bun dist/server/serve.js",
-		"start:worker": "NODE_ENV=production bun dist/worker/index.js",
-		"start:all": "concurrently \"bun run start:server\" \"bun run start:worker\"",
+		"dev": "concurrently --kill-others-on-fail --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --names \"API,WORKER\" \"bun run dev:server\" \"bun run dev:worker\"",
+		"dev:server": "bun run --hot --watch ./src/serve.ts",
+		"dev:worker": "bun run --hot --watch ./src/bull/index.ts",
+		"build": "bun run tsc && bun build ./src/serve.ts --target=node --outdir=./dist/src --format=cjs",
+		"start": "concurrently --kill-others-on-fail --prefix-colors \"bgGreen.bold,bgMagenta.bold\" --names \"API,WORKER\" \"bun run start:server\" \"bun run start:worker\"",
+		"start:server": "bun run ./dist/src/serve.js",
+		"start:worker": "bun run ./dist/src/bull/index.js",
 		"lint": "bun run eslint . --ext .ts,.js",
-		"link:fix": "bun run eslint . --ext .ts,.js --fix",
+		"lint:fix": "bun run eslint . --ext .ts,.js --fix",
 		"format": "bun run prettier --write .",
 		"typecheck": "bun run tsc --noEmit",
-		"prepare": "husky install"
+		"prepare": "husky install",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:pull": "drizzle-kit introspect",
+		"db:studio": "drizzle-kit studio",
+		"db:drop": "drizzle-kit drop",
+		"db:seed": "bun run src/libs/database/seed/index.ts",
+		"db:clickhouse:migrate": "bun run src/libs/database/clickhouse/scripts/migrate.ts migrate",
+		"db:clickhouse:status": "bun run src/libs/database/clickhouse/scripts/migrate.ts status"
 	},
 	"devDependencies": {
 		"@types/bcryptjs": "^3.0.0",
@@ -38,7 +42,9 @@
 		"drizzle-kit": "^0.31.8",
 		"eslint": "^9.39.2",
 		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-import": "^2.32.0",
 		"eslint-plugin-prettier": "^5.5.5",
+		"eslint-plugin-simple-import-sort": "^12.1.1",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.2.7",
 		"prettier": "^3.8.1",
@@ -79,9 +85,9 @@
 		"zod": "^4.3.6"
 	},
 	"lint-staged": {
-		"*.(ts|js)": [
-			"bun run format",
-			"bun run lint"
+		"*.ts": [
+			"bun run lint:fix",
+			"bun run format"
 		]
 	}
 }

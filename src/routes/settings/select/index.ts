@@ -7,6 +7,7 @@ import {
 	UnauthorizedResponseSchema,
 } from "@utils";
 import { FastifyInstance } from "fastify";
+
 import {
 	SelectPermissionResponseSchema,
 	SelectRoleResponseSchema,

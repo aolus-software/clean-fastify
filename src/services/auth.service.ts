@@ -1,22 +1,22 @@
-import { Hash, StrToolkit } from "@utils";
-import { UnprocessableEntityError } from "@fastify-libs";
+import { sendEmailQueue } from "@bull/queue/send-email.queue";
+import { AppConfig } from "@config";
 import {
-	ForgotPasswordRepository,
-	UserRepository,
-	RedisClient,
-} from "@database";
-import { UserInformation } from "@types";
-import {
-	usersTable,
 	db,
 	email_verificationsTable,
+	ForgotPasswordRepository,
 	password_reset_tokensTable,
+	RedisClient,
+	UserRepository,
+	usersTable,
 } from "@database";
+import {
+	injectable,
+	UnprocessableEntityError,
+	verificationTokenLifetime,
+} from "@fastify-libs";
+import { UserInformation } from "@types";
+import { Hash, StrToolkit } from "@utils";
 import { and, eq, isNull } from "drizzle-orm";
-import { verificationTokenLifetime } from "@fastify-libs";
-import { AppConfig } from "@config";
-import { sendEmailQueue } from "@bull/queue/send-email.queue";
-import { injectable } from "@fastify-libs";
 
 @injectable()
 export class AuthService {

@@ -39,32 +39,32 @@ export const schema = {
 };
 
 export {
-	usersTable,
-	rolesTable,
-	permissionsTable,
-	role_permissionsTable,
-	user_rolesTable,
 	email_verificationsTable,
 	password_reset_tokensTable,
+	permissionsTable,
+	role_permissionsTable,
+	rolesTable,
+	user_rolesTable,
+	usersTable,
 };
 
 // Export all types
-export type { User, InsertUser, UserStatusEnum } from "./user";
-export type {
-	Role,
-	Permission,
-	RolePermission,
-	UserRole,
-	InsertRole,
-	InsertPermission,
-	InsertRolePermission,
-	InsertUserRole,
-} from "./rbac";
 export type {
 	EmailVerification,
 	InsertEmailVerification,
 } from "./email_verification";
 export type {
-	PasswordResetToken,
 	InsertPasswordResetToken,
+	PasswordResetToken,
 } from "./password_reset_token";
+export type {
+	InsertPermission,
+	InsertRole,
+	InsertRolePermission,
+	InsertUserRole,
+	Permission,
+	Role,
+	RolePermission,
+	UserRole,
+} from "./rbac";
+export type { InsertUser, User, UserStatusEnum } from "./user";

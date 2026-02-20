@@ -1,17 +1,17 @@
-import fastify from "fastify";
 import { AppConfig } from "@config/app.config";
+import { RedisConfig } from "@config/redis.config";
+import fastifyAutoload from "@fastify/autoload";
 import fastifyJwt from "@fastify/jwt";
 import fastifyRedis from "@fastify/redis";
-import fastifyAutoload from "@fastify/autoload";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { createLoggerConfig } from "@utils";
-import { RedisConfig } from "@config/redis.config";
+import fastify from "fastify";
 import {
 	serializerCompiler,
 	validatorCompiler,
 	type ZodTypeProvider,
 } from "fastify-type-provider-zod";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

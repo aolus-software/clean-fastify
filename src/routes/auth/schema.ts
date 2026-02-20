@@ -1,11 +1,11 @@
 import { StrongPassword } from "@fastify-libs";
-import { z } from "zod";
 import {
 	createSuccessResponseSchema,
+	ServerErrorResponseSchema,
 	UnauthorizedResponseSchema,
 	ValidationErrorResponseSchema,
-	ServerErrorResponseSchema,
 } from "@utils";
+import { z } from "zod";
 
 // Body Schemas
 export const LoginBodySchema = z.object({
@@ -75,7 +75,7 @@ export const SuccessResponseSchema = createSuccessResponseSchema(z.object({}));
 
 // Re-export common error responses
 export {
+	ServerErrorResponseSchema,
 	UnauthorizedResponseSchema,
 	ValidationErrorResponseSchema,
-	ServerErrorResponseSchema,
 };

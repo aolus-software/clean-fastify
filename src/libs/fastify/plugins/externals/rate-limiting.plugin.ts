@@ -1,7 +1,7 @@
-import fastifyRateLimit from "@fastify/rate-limit";
-import fp from "fastify-plugin";
 import { RedisConfig } from "@config";
+import fastifyRateLimit from "@fastify/rate-limit";
 import type { FastifyRequest } from "fastify";
+import fp from "fastify-plugin";
 
 export default fp(
 	async function (fastify) {

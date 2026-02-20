@@ -1,24 +1,25 @@
+import { AppConfig } from "@config";
+import { UnprocessableEntityError } from "@fastify-libs";
+import { AuthService } from "@services";
+import { UserInformation } from "@types";
+import { ResponseToolkit, StrToolkit } from "@utils";
 import { FastifyInstance } from "fastify";
+
 import {
+	ForgotPasswordBodySchema,
 	LoginBodySchema,
+	LoginResponseSchema,
+	RefreshTokenBodySchema,
+	RefreshTokenResponseSchema,
 	RegisterBodySchema,
 	ResendVerificationBodySchema,
-	VerifyEmailBodySchema,
-	ForgotPasswordBodySchema,
 	ResetPasswordBodySchema,
-	RefreshTokenBodySchema,
-	LoginResponseSchema,
-	RefreshTokenResponseSchema,
+	ServerErrorResponseSchema,
 	SuccessResponseSchema,
 	UnauthorizedResponseSchema,
 	ValidationErrorResponseSchema,
-	ServerErrorResponseSchema,
+	VerifyEmailBodySchema,
 } from "./schema";
-import { AuthService } from "@services";
-import { ResponseToolkit, StrToolkit } from "@utils";
-import { UserInformation } from "@types";
-import { AppConfig } from "@config";
-import { UnprocessableEntityError } from "@fastify-libs";
 
 export default function (fastify: FastifyInstance) {
 	// ======================

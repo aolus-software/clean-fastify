@@ -1,8 +1,8 @@
-import { and, eq, isNull } from "drizzle-orm";
-import { Hash } from "@utils";
 import { UserRepository, usersTable } from "@database";
 import { UnauthorizedError, UnprocessableEntityError } from "@fastify-libs";
 import { UserInformation } from "@types";
+import { Hash } from "@utils";
+import { and, eq, isNull } from "drizzle-orm";
 import { injectable } from "tsyringe";
 
 @injectable()

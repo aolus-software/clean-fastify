@@ -1,3 +1,4 @@
+import { db, permissionsTable, RoleRepository } from "@database";
 import { UnprocessableEntityError } from "@fastify-libs";
 import {
 	DatatableType,
@@ -5,7 +6,6 @@ import {
 	RoleDetail,
 	RoleList,
 } from "@types";
-import { db, permissionsTable, RoleRepository } from "@database";
 import { inArray } from "drizzle-orm";
 import { injectable } from "tsyringe";
 

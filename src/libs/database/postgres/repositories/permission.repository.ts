@@ -1,7 +1,5 @@
 import { db, permissionsTable } from "@database";
-import { defaultSort } from "@/libs/fastify/default/sort";
-import { and, asc, desc, eq, ilike, not, or, SQL } from "drizzle-orm";
-import { DbTransaction } from ".";
+import { NotFoundError, UnprocessableEntityError } from "@fastify-libs";
 import {
 	DatatableType,
 	PaginationResponse,
@@ -9,8 +7,12 @@ import {
 	PermissionSelectOptions,
 	SortDirection,
 } from "@types";
-import { NotFoundError, UnprocessableEntityError } from "@fastify-libs";
+import { and, asc, desc, eq, ilike, not, or, SQL } from "drizzle-orm";
 import { injectable } from "tsyringe";
+
+import { defaultSort } from "@/libs/fastify/default/sort";
+
+import { DbTransaction } from ".";
 
 @injectable()
 export class PermissionRepository {

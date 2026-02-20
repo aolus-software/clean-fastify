@@ -1,6 +1,7 @@
-import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { usersTable } from "./user";
 import { relations } from "drizzle-orm";
+import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+
+import { usersTable } from "./user";
 
 export const email_verificationsTable = pgTable(
 	"email_verifications",

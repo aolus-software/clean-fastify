@@ -12,13 +12,14 @@ import {
 	UnauthorizedResponseSchema,
 } from "@utils";
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
+
 import {
 	CreateRoleSchema,
 	RoleDetailResponseSchema,
 	RoleResponseSchema,
 	UpdateRoleSchema,
 } from "./schema";
-import { z } from "zod";
 
 export default function (fastify: FastifyInstance) {
 	fastify.addHook("onRequest", async (request, reply) => {

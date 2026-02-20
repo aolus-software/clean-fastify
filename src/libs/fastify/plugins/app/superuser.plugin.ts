@@ -1,11 +1,11 @@
+import { FastifyReply, FastifyRequest } from "fastify";
+import fp from "fastify-plugin";
+
 declare module "fastify" {
 	interface FastifyRequest {
 		requireSuperuser(reply: FastifyReply): void;
 	}
 }
-
-import { FastifyReply, FastifyRequest } from "fastify";
-import fp from "fastify-plugin";
 
 function requireSuperuser(this: FastifyRequest, reply: FastifyReply) {
 	const userInformation = this.userInformation;

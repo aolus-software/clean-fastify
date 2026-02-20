@@ -1,8 +1,9 @@
-import fs from "fs";
-import path from "path";
-import { transporter } from "./transport.mail";
 import { AppConfig, MailConfig } from "@config";
 import { logger } from "@utils";
+import fs from "fs";
+import path from "path";
+
+import { transporter } from "./transport.mail";
 
 export interface EmailOptions {
 	to: string;

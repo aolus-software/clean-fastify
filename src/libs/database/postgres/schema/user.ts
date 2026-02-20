@@ -7,6 +7,7 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+
 import { email_verificationsTable } from "./email_verification";
 import { password_reset_tokensTable } from "./password_reset_token";
 import { user_rolesTable } from "./rbac";

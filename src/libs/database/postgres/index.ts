@@ -1,6 +1,7 @@
+import { DatabaseConfig } from "@config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { DatabaseConfig } from "@config";
+
 import { schema } from "./schema";
 
 const client = new Pool({
@@ -13,7 +14,7 @@ const client = new Pool({
 
 const db = drizzle(client, { schema });
 
-export { db, client };
+export { client, db };
 
-export * from "./schema";
 export * from "./repositories";
+export * from "./schema";

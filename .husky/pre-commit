@@ -1,5 +1,6 @@
-bun install 
-bunx lint-staged
-make db-generate 
-make db-migrate 
-bun run build:all
+bun install
+bun lint-staged
+bunx drizzle-kit generate
+bunx drizzle-kit migrate
+bun run tsc --noEmit
+bun run build

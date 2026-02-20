@@ -69,14 +69,14 @@ make db-seed
 Start the development server:
 
 ```bash
+# Start both server and worker
+make dev
+
 # Start API server only
 make dev-server
 
 # Start worker only
 make dev-worker
-
-# Start both server and worker
-make dev-all
 ```
 
 The API will be available at `http://localhost:8001`
@@ -116,20 +116,18 @@ src/
 ### Development
 
 ```bash
-make dev-server      # Start server with hot reload
-make dev-worker      # Start worker with hot reload
-make dev-all         # Start server and worker concurrently
+make dev            # Start server and worker with hot reload
+make dev-server     # Start server only with hot reload
+make dev-worker     # Start worker only with hot reload
 ```
 
 ### Production Build
 
 ```bash
-make build-server    # Build server
-make build-worker    # Build worker
-make build-all       # Build both server and worker
-make start-server    # Start production server
-make start-worker    # Start production worker
-make start-all       # Start both in production
+make build          # Build the application
+make start          # Start server and worker
+make start-server   # Start production server only
+make start-worker   # Start production worker only
 ```
 
 ### Code Quality
@@ -155,8 +153,8 @@ make db-seed        # Run database seeders
 ### Database (ClickHouse)
 
 ```bash
-make migrate-clickhouse        # Run ClickHouse migrations
-make migrate-clickhouse-status # Check migration status
+make db-clickhouse-migrate        # Run ClickHouse migrations
+make db-clickhouse-status         # Check migration status
 ```
 
 ### Quick Workflows

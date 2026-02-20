@@ -1,8 +1,8 @@
 import { BaseRepository } from "./base.repository";
 import {
-	IUserActivity,
 	IDailyActivityStats,
 	IUserActivitiesRepository,
+	IUserActivity,
 } from "./interfaces/user-activities.interface";
 
 export class UserActivitiesRepository

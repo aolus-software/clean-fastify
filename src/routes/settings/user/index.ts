@@ -1,3 +1,4 @@
+import { UserService } from "@services";
 import {
 	BadRequestResponseSchema,
 	buildDatatableQueryParamsSchema,
@@ -10,6 +11,8 @@ import {
 	UnauthorizedResponseSchema,
 } from "@utils";
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
+
 import {
 	ChangeUserPasswordSchema,
 	CreateUserSchema,
@@ -17,8 +20,6 @@ import {
 	UserDetailResponseSchema,
 	UserResponseSchema,
 } from "./schema";
-import { UserService } from "@services";
-import { z } from "zod";
 
 export default function (fastify: FastifyInstance) {
 	// apply authentication to all routes in this module using autohook

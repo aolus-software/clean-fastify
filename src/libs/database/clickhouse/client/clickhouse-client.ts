@@ -1,4 +1,4 @@
-import { createClient, ClickHouseClient } from "@clickhouse/client";
+import { ClickHouseClient, createClient } from "@clickhouse/client";
 
 export class ClickHouseClientManager {
 	private static instance: ClickHouseClient | null = null;

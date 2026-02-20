@@ -65,14 +65,11 @@ jobs:
       - name: "Run Lint"
         run: bun run lint
 
-      - name: "Build Server"
-        run: bun run build:server
-
-      - name: "Build Worker"
-        run: bun run build:worker
+      - name: "Run Build"
+        run: bun run build
 
       - name: "Verify Build Output"
         run: |
           ls -lh dist/
-          test -f dist/server/serve.js || exit 1
-          test -f dist/worker/index.js || exit 1
+          test -f dist/src/serve.js || exit 1
+          test -f dist/src/bull/index.js || exit 1

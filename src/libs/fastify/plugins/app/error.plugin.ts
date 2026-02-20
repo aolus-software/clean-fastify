@@ -1,7 +1,7 @@
-import { ResponseToolkit } from "@utils";
-import fp from "fastify-plugin";
-import Fastify, { FastifyError } from "fastify";
 import { HttpError, UnprocessableEntityError } from "@fastify-libs";
+import { ResponseToolkit } from "@utils";
+import Fastify, { FastifyError } from "fastify";
+import fp from "fastify-plugin";
 
 interface ValidationError {
 	instancePath: string;

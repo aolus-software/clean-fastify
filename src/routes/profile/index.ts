@@ -1,15 +1,16 @@
-import { FastifyInstance } from "fastify";
 import { ProfileService } from "@services";
-import { ResponseToolkit } from "@utils";
 import { UserInformation } from "@types";
+import { ResponseToolkit } from "@utils";
+import { FastifyInstance } from "fastify";
+
 import {
-	UpdateProfileBodySchema,
-	UpdatePasswordBodySchema,
 	ProfileResponseSchema,
+	ServerErrorResponseSchema,
 	SuccessResponseSchema,
 	UnauthorizedResponseSchema,
+	UpdatePasswordBodySchema,
+	UpdateProfileBodySchema,
 	ValidationErrorResponseSchema,
-	ServerErrorResponseSchema,
 } from "./schema";
 
 export default function (fastify: FastifyInstance) {

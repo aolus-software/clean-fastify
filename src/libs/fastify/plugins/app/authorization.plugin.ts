@@ -1,12 +1,12 @@
+import { FastifyReply, FastifyRequest } from "fastify";
+import fp from "fastify-plugin";
+
 declare module "fastify" {
 	interface FastifyRequest {
 		requireRoles(roles: string[], reply: FastifyReply): void;
 		requirePermissions(permissions: string[], reply: FastifyReply): void;
 	}
 }
-
-import { FastifyReply, FastifyRequest } from "fastify";
-import fp from "fastify-plugin";
 
 function requireRoles(
 	this: FastifyRequest,

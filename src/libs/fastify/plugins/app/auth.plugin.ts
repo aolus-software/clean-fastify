@@ -1,8 +1,8 @@
 import { UserInformationCacheKey } from "@cache";
 import { UserRepository } from "@database";
+import { UserInformation } from "@types";
 import { FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
-import { UserInformation } from "@types";
 
 declare module "fastify" {
 	interface FastifyInstance {

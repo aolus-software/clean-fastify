@@ -1,11 +1,11 @@
 import { StrongPassword } from "@fastify-libs";
-import { z } from "zod";
 import {
 	createSuccessResponseSchema,
+	ServerErrorResponseSchema,
 	UnauthorizedResponseSchema,
 	ValidationErrorResponseSchema,
-	ServerErrorResponseSchema,
 } from "@utils";
+import { z } from "zod";
 
 // Body Schemas
 export const UpdateProfileBodySchema = z.object({
@@ -42,7 +42,7 @@ export const ProfileResponseSchema = createSuccessResponseSchema(
 export const SuccessResponseSchema = createSuccessResponseSchema(z.object({}));
 
 export {
+	ServerErrorResponseSchema,
 	UnauthorizedResponseSchema,
 	ValidationErrorResponseSchema,
-	ServerErrorResponseSchema,
 };

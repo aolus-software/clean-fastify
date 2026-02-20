@@ -1,4 +1,4 @@
-import { cleanEnv, str, num } from "envalid";
+import { cleanEnv, num, str } from "envalid";
 
 const env = cleanEnv(process.env, {
 	REDIS_HOST: str({ default: "localhost" }),

@@ -12,6 +12,7 @@ import {
 } from "@utils";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
+
 import {
 	CreatePermissionSchema,
 	PermissionSchema,

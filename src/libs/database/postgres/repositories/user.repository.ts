@@ -1,22 +1,10 @@
 import { db, user_rolesTable, usersTable, UserStatusEnum } from "@database";
 import {
-	and,
-	eq,
-	isNull,
-	or,
-	ilike,
-	SQL,
-	asc,
-	desc,
-	exists,
-} from "drizzle-orm";
-import { Hash } from "@utils";
-import { DbTransaction } from ".";
-import {
+	defaultSort,
+	injectable,
 	NotFoundError,
 	UnauthorizedError,
 	UnprocessableEntityError,
-	defaultSort,
 } from "@fastify-libs";
 import {
 	DatatableType,
@@ -28,7 +16,20 @@ import {
 	UserInformation,
 	UserList,
 } from "@types";
-import { injectable } from "@fastify-libs";
+import { Hash } from "@utils";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	exists,
+	ilike,
+	isNull,
+	or,
+	SQL,
+} from "drizzle-orm";
+
+import { DbTransaction } from ".";
 
 @injectable()
 export class UserRepository {

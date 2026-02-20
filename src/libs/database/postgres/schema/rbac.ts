@@ -1,11 +1,12 @@
 import { relations } from "drizzle-orm";
 import {
 	pgTable,
-	uuid,
-	varchar,
 	primaryKey,
 	timestamp,
+	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
+
 import { usersTable } from "./user";
 
 export const rolesTable = pgTable("roles", {

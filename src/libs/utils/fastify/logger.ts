@@ -1,5 +1,6 @@
-import { DateToolkit } from "../toolkit/date";
 import pino from "pino";
+
+import { DateToolkit } from "../date";
 
 interface LoggerOptions {
 	level?: string;

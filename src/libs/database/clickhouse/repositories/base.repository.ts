@@ -1,4 +1,5 @@
 import { ClickHouseClient } from "@clickhouse/client";
+
 import { ClickHouseClientManager } from "../client/clickhouse-client";
 
 export class BaseRepository {

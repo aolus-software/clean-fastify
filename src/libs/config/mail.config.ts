@@ -1,4 +1,4 @@
-import { cleanEnv, str, num, bool } from "envalid";
+import { bool, cleanEnv, num, str } from "envalid";
 
 const env = cleanEnv(process.env, {
 	MAIL_HOST: str({ default: "smtp.example.com" }),

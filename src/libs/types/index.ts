@@ -1,2 +1,2 @@
-export * from "./repositories/index";
 export * from "./datatable/index";
+export * from "./repositories/index";

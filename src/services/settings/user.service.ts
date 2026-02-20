@@ -1,19 +1,19 @@
-import { UnprocessableEntityError } from "@fastify-libs";
 import {
-	UserRepository,
 	db,
 	rolesTable,
+	UserRepository,
 	usersTable,
 	UserStatusEnum,
 } from "@database";
+import { UnprocessableEntityError } from "@fastify-libs";
 import {
-	UserDetail,
-	UserList,
 	DatatableType,
 	PaginationResponse,
+	UserDetail,
+	UserList,
 } from "@types";
-import { and, eq, inArray, isNull, not } from "drizzle-orm";
 import { Hash } from "@utils";
+import { and, eq, inArray, isNull, not } from "drizzle-orm";
 import { injectable } from "tsyringe";
 
 @injectable()
