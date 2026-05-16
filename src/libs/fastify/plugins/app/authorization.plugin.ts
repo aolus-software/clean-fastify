@@ -1,3 +1,5 @@
+import { t } from "@i18n";
+import { ResponseToolkit } from "@utils";
 import { FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 
@@ -15,7 +17,7 @@ function requireRoles(
 ) {
 	const userInformation = this.userInformation;
 	if (!userInformation) {
-		reply.status(401).send({ message: "Unauthorized" });
+		ResponseToolkit.unauthorized(reply, t("auth.authRequired"));
 		return;
 	}
 
@@ -27,9 +29,7 @@ function requireRoles(
 		userInformation.roles.includes(role),
 	);
 	if (!hasRequiredRole) {
-		reply
-			.status(403)
-			.send({ message: "Access denied. Required role(s) missing." });
+		ResponseToolkit.error(reply, t("auth.accessDeniedRole"), 403);
 		return;
 	}
 }
@@ -41,7 +41,7 @@ function requirePermissions(
 ) {
 	const userInformation = this.userInformation;
 	if (!userInformation) {
-		reply.status(401).send({ message: "Unauthorized" });
+		ResponseToolkit.unauthorized(reply, t("auth.authRequired"));
 		return;
 	}
 
@@ -53,9 +53,7 @@ function requirePermissions(
 		userInformation.permissions.map((perm) => perm.name).includes(permission),
 	);
 	if (!hasRequiredPermission) {
-		reply
-			.status(403)
-			.send({ message: "Access denied. Required permission(s) missing." });
+		ResponseToolkit.error(reply, t("auth.accessDeniedPermission"), 403);
 		return;
 	}
 }

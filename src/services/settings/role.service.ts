@@ -1,5 +1,6 @@
 import { db, permissionsTable, RoleRepository } from "@database";
 import { UnprocessableEntityError } from "@fastify-libs";
+import { t } from "@i18n";
 import {
 	DatatableType,
 	PaginationResponse,
@@ -34,10 +35,10 @@ export class RoleService {
 			.where(inArray(permissionsTable.id, data.permissionIds));
 
 		if (validPermissions.length !== data.permissionIds.length) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "permissionIds",
-					message: "One or more permissions are invalid",
+					message: t("settings.roles.invalidPermissions"),
 				},
 			]);
 		}
@@ -66,10 +67,10 @@ export class RoleService {
 			.where(inArray(permissionsTable.id, data.permissionIds));
 
 		if (validPermissions.length !== data.permissionIds.length) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "permissionIds",
-					message: "One or more permissions are invalid",
+					message: t("settings.roles.invalidPermissions"),
 				},
 			]);
 		}

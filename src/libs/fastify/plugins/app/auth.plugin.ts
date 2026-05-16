@@ -1,6 +1,8 @@
 import { UserInformationCacheKey } from "@cache";
 import { UserRepository } from "@database";
+import { t } from "@i18n";
 import { UserInformation } from "@types";
+import { ResponseToolkit } from "@utils";
 import { FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 
@@ -36,7 +38,7 @@ async function authenticate(this: FastifyRequest, reply: FastifyReply) {
 			this.userInformation = JSON.parse(cacheUser);
 		}
 	} catch {
-		reply.status(401).send({ message: "Unauthorized" });
+		ResponseToolkit.unauthorized(reply, t("auth.authRequired"));
 		return;
 	}
 

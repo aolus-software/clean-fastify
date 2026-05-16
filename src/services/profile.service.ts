@@ -1,5 +1,6 @@
 import { UserRepository, usersTable } from "@database";
 import { UnauthorizedError, UnprocessableEntityError } from "@fastify-libs";
+import { t } from "@i18n";
 import { UserInformation } from "@types";
 import { Hash } from "@utils";
 import { and, eq, isNull } from "drizzle-orm";
@@ -18,7 +19,7 @@ export class ProfileService {
 		});
 
 		if (!user) {
-			throw new UnauthorizedError("User not found");
+			throw new UnauthorizedError(t("auth.userNotFound"));
 		}
 
 		await this._userRepository.db
@@ -45,7 +46,7 @@ export class ProfileService {
 		});
 
 		if (!user) {
-			throw new UnauthorizedError("User not found");
+			throw new UnauthorizedError(t("auth.userNotFound"));
 		}
 
 		const isPasswordValid = await Hash.compareHash(
@@ -54,10 +55,10 @@ export class ProfileService {
 		);
 
 		if (!isPasswordValid) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "currentPassword",
-					message: "Current password is incorrect",
+					message: t("profile.currentPasswordIncorrect"),
 				},
 			]);
 		}

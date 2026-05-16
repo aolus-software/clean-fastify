@@ -1,4 +1,5 @@
 import { PermissionRepository, RoleRepository } from "@database";
+import { t } from "@i18n";
 import {
 	createSuccessResponseSchema,
 	ForbiddenResponseSchema,
@@ -46,7 +47,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success(
 				reply,
 				permissions,
-				"Permission select options fetched",
+				t("settings.select.permissionsFetched"),
 				200,
 			);
 		},
@@ -79,7 +80,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success(
 				reply,
 				roles,
-				"Role select options fetched",
+				t("settings.select.rolesFetched"),
 				200,
 			);
 		},

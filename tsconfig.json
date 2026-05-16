@@ -40,7 +40,7 @@
 		] /* Specify multiple folders that act like './node_modules/@types'. */,
 		// "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
 		// "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
-		// "resolveJsonModule": true,                        /* Enable importing .json files. */
+		"resolveJsonModule": true /* Enable importing .json files. */,
 		// "noResolve": true,                                /* Disallow 'import's, 'require's or '<reference>'s from expanding the number of files TypeScript should add to a project. */
 
 		/* JavaScript Support */
@@ -116,6 +116,8 @@
 			"@database": ["./src/libs/database", "./src/libs/database/index.ts"],
 			"@fastify-libs/*": ["./src/libs/fastify/*"],
 			"@fastify-libs": ["./src/libs/fastify", "./src/libs/fastify/index.ts"],
+			"@i18n/*": ["./src/libs/i18n/*"],
+			"@i18n": ["./src/libs/i18n", "./src/libs/i18n/index.ts"],
 			"@utils/*": ["./src/libs/utils/*"],
 			"@utils": ["./src/libs/utils", "./src/libs/utils/index.ts"],
 			"@bull/*": ["./src/bull/*"],

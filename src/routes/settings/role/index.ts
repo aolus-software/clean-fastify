@@ -1,3 +1,4 @@
+import { t } from "@i18n";
 import { RoleService } from "@services";
 import {
 	BadRequestResponseSchema,
@@ -54,7 +55,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(RoleService);
 			const data = await service.findAll(queryParams);
 
-			return ResponseToolkit.success(reply, data, "Roles fetched", 200);
+			return ResponseToolkit.success(
+				reply,
+				data,
+				t("settings.roles.fetched"),
+				200,
+			);
 		},
 	);
 
@@ -83,7 +89,12 @@ export default function (fastify: FastifyInstance) {
 			const body = request.body as z.infer<typeof CreateRoleSchema>;
 			await service.create(body);
 
-			return ResponseToolkit.success(reply, {}, "Role created", 201);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.roles.created"),
+				201,
+			);
 		},
 	);
 
@@ -115,7 +126,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(RoleService);
 			const data = await service.detail(roleId);
 
-			return ResponseToolkit.success(reply, data, "Role detail fetched", 200);
+			return ResponseToolkit.success(
+				reply,
+				data,
+				t("settings.roles.detailFetched"),
+				200,
+			);
 		},
 	);
 
@@ -149,7 +165,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(RoleService);
 			await service.update(roleId, body);
 
-			return ResponseToolkit.success(reply, {}, "Role updated", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.roles.updated"),
+				200,
+			);
 		},
 	);
 
@@ -181,7 +202,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(RoleService);
 			await service.delete(roleId);
 
-			return ResponseToolkit.success(reply, {}, "Role deleted", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.roles.deleted"),
+				200,
+			);
 		},
 	);
 }

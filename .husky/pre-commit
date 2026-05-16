@@ -1,6 +1,7 @@
 bun install
 bun run format
 bun run lint:fix
+bun run i18n:keys
 bunx drizzle-kit generate
 bunx drizzle-kit migrate
 bun run tsc --noEmit

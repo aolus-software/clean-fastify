@@ -6,6 +6,7 @@ import {
 	UserStatusEnum,
 } from "@database";
 import { UnprocessableEntityError } from "@fastify-libs";
+import { t } from "@i18n";
 import {
 	DatatableType,
 	PaginationResponse,
@@ -45,10 +46,10 @@ export class UserService {
 		});
 
 		if (isEmailExists) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "email",
-					message: "Email already exists",
+					message: t("settings.users.emailExists"),
 				},
 			]);
 		}
@@ -60,10 +61,10 @@ export class UserService {
 			.where(inArray(rolesTable.id, data.roleIds));
 
 		if (validRoles.length !== data.roleIds.length) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "roleIds",
-					message: "One or more roles are invalid",
+					message: t("settings.users.invalidRoles"),
 				},
 			]);
 		}
@@ -95,10 +96,10 @@ export class UserService {
 			),
 		});
 		if (isEmailExists) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "email",
-					message: "Email already exists",
+					message: t("settings.users.emailExists"),
 				},
 			]);
 		}
@@ -110,10 +111,10 @@ export class UserService {
 			.where(inArray(rolesTable.id, data.roleIds));
 
 		if (validRoles.length !== data.roleIds.length) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "roleIds",
-					message: "One or more roles are invalid",
+					message: t("settings.users.invalidRoles"),
 				},
 			]);
 		}

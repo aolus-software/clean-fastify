@@ -1,3 +1,4 @@
+import { t } from "@i18n";
 import { UserService } from "@services";
 import {
 	BadRequestResponseSchema,
@@ -57,7 +58,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(UserService);
 			const data = await service.findAll(queryParams);
 
-			return ResponseToolkit.success(reply, data, "Users fetched", 200);
+			return ResponseToolkit.success(
+				reply,
+				data,
+				t("settings.users.fetched"),
+				200,
+			);
 		},
 	);
 
@@ -87,7 +93,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(UserService);
 			await service.create(request.body as z.infer<typeof CreateUserSchema>);
 
-			return ResponseToolkit.success(reply, {}, "User created", 201);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.users.created"),
+				201,
+			);
 		},
 	);
 
@@ -121,7 +132,11 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(UserService);
 			const data = await service.detail(userId);
 
-			return ResponseToolkit.success(reply, data, "User detail fetched");
+			return ResponseToolkit.success(
+				reply,
+				data,
+				t("settings.users.detailFetched"),
+			);
 		},
 	);
 
@@ -158,7 +173,12 @@ export default function (fastify: FastifyInstance) {
 				request.body as z.infer<typeof UpdateUserSchema>,
 			);
 
-			return ResponseToolkit.success(reply, {}, "User updated", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.users.updated"),
+				200,
+			);
 		},
 	);
 
@@ -191,7 +211,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(UserService);
 			await service.delete(userId);
 
-			return ResponseToolkit.success(reply, {}, "User deleted", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.users.deleted"),
+				200,
+			);
 		},
 	);
 
@@ -226,7 +251,12 @@ export default function (fastify: FastifyInstance) {
 			const service = fastify.di.resolve(UserService);
 			await service.resetPassword(userId, { password: body.password });
 
-			return ResponseToolkit.success(reply, {}, "Password changed", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.users.passwordChanged"),
+				200,
+			);
 		},
 	);
 }

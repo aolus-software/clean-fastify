@@ -31,7 +31,8 @@
 		"db:drop": "drizzle-kit drop",
 		"db:seed": "bun run src/libs/database/seed/index.ts",
 		"db:clickhouse:migrate": "bun run src/libs/database/clickhouse/scripts/migrate.ts migrate",
-		"db:clickhouse:status": "bun run src/libs/database/clickhouse/scripts/migrate.ts status"
+		"db:clickhouse:status": "bun run src/libs/database/clickhouse/scripts/migrate.ts status",
+		"i18n:keys": "bun run src/libs/i18n/scripts/generate-keys.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

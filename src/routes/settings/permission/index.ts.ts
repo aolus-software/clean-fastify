@@ -1,3 +1,4 @@
+import { t } from "@i18n";
 import { PermissionService } from "@services";
 import {
 	BadRequestResponseSchema,
@@ -55,7 +56,12 @@ export default function (fastify: FastifyInstance) {
 			const queryParams = DatatableToolkit.parseFilter(request);
 			const service = fastify.di.resolve(PermissionService);
 			const data = await service.findAll(queryParams);
-			return ResponseToolkit.success(reply, data, "Permissions fetched", 200);
+			return ResponseToolkit.success(
+				reply,
+				data,
+				t("settings.permissions.fetched"),
+				200,
+			);
 		},
 	);
 
@@ -89,7 +95,12 @@ export default function (fastify: FastifyInstance) {
 
 			const service = fastify.di.resolve(PermissionService);
 			await service.create({ name: name, group });
-			return ResponseToolkit.success(reply, {}, "Permission created", 201);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.permissions.created"),
+				201,
+			);
 		},
 	);
 
@@ -124,7 +135,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success(
 				reply,
 				data,
-				"Permission detail fetched",
+				t("settings.permissions.detailFetched"),
 				200,
 			);
 		},
@@ -163,7 +174,12 @@ export default function (fastify: FastifyInstance) {
 
 			const service = fastify.di.resolve(PermissionService);
 			await service.update(permissionId, { name, group });
-			return ResponseToolkit.success(reply, {}, "Permission updated", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.permissions.updated"),
+				200,
+			);
 		},
 	);
 
@@ -195,7 +211,12 @@ export default function (fastify: FastifyInstance) {
 
 			const service = fastify.di.resolve(PermissionService);
 			await service.delete(permissionId);
-			return ResponseToolkit.success(reply, {}, "Permission deleted", 200);
+			return ResponseToolkit.success(
+				reply,
+				{},
+				t("settings.permissions.deleted"),
+				200,
+			);
 		},
 	);
 }

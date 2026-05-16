@@ -1,3 +1,4 @@
+import { t } from "@i18n";
 import { ProfileService } from "@services";
 import { UserInformation } from "@types";
 import { ResponseToolkit } from "@utils";
@@ -42,7 +43,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success<UserInformation>(
 				reply,
 				userInfo,
-				"Profile retrieved successfully",
+				t("profile.retrieved"),
 				200,
 			);
 		},
@@ -82,7 +83,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success<UserInformation>(
 				reply,
 				updatedUser,
-				"Profile updated successfully",
+				t("profile.updated"),
 				200,
 			);
 		},
@@ -123,7 +124,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success(
 				reply,
 				{},
-				"Password updated successfully",
+				t("profile.passwordUpdated"),
 				200,
 			);
 		},

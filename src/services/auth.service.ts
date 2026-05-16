@@ -14,6 +14,7 @@ import {
 	UnprocessableEntityError,
 	verificationTokenLifetime,
 } from "@fastify-libs";
+import { getCurrentLocale, t } from "@i18n";
 import { UserInformation } from "@types";
 import { Hash, StrToolkit } from "@utils";
 import { and, eq, isNull } from "drizzle-orm";
@@ -29,29 +30,29 @@ export class AuthService {
 		const user = await this._userRepository.findByEmail(email);
 
 		if (user.email_verified_at === null) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "email",
-					message: "Email not verified",
+					message: t("auth.emailNotVerified"),
 				},
 			]);
 		}
 
 		if (user.status !== "active") {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "email",
-					message: "Your account is not active. Please contact administrator.",
+					message: t("auth.accountInactive"),
 				},
 			]);
 		}
 
 		const isPasswordValid = await Hash.compareHash(password, user.password);
 		if (!isPasswordValid) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "email",
-					message: "Invalid email or password",
+					message: t("auth.invalidCredentials"),
 				},
 			]);
 		}
@@ -72,15 +73,16 @@ export class AuthService {
 		});
 
 		if (user) {
-			throw new UnprocessableEntityError("Email already in use", [
+			throw new UnprocessableEntityError(t("auth.emailAlreadyInUse"), [
 				{
 					field: "email",
-					message: "The provided email is already registered",
+					message: t("auth.emailAlreadyRegistered"),
 				},
 			]);
 		}
 
 		const hashedPassword = await Hash.generateHash(payload.password);
+		const lang = getCurrentLocale();
 		await db.transaction(async (trx) => {
 			const newUser = await trx
 				.insert(usersTable)
@@ -100,9 +102,10 @@ export class AuthService {
 			});
 
 			await sendEmailQueue.add("send-email", {
-				subject: "Email verification",
+				subject: t("mail.subject.verification"),
 				to: payload.email,
 				template: "/auth/email-verification",
+				lang,
 				variables: {
 					user_id: newUser[0].id,
 					user_name: newUser[0].name,
@@ -120,15 +123,16 @@ export class AuthService {
 		}
 
 		if (user.email_verified_at !== null) {
-			throw new UnprocessableEntityError("Email already verified", [
+			throw new UnprocessableEntityError(t("auth.emailAlreadyVerified"), [
 				{
 					field: "email",
-					message: "This email has already been verified",
+					message: t("auth.emailAlreadyVerified"),
 				},
 			]);
 		}
 
 		const token = StrToolkit.random(255);
+		const lang = getCurrentLocale();
 		await db.transaction(async (trx) => {
 			await trx.insert(email_verificationsTable).values({
 				token,
@@ -137,9 +141,10 @@ export class AuthService {
 			});
 
 			await sendEmailQueue.add("send-email", {
-				subject: "Email verification",
+				subject: t("mail.subject.verification"),
 				to: payload.email,
 				template: "/auth/email-verification",
+				lang,
 				variables: {
 					user_id: user.id,
 					user_name: user.name,
@@ -158,10 +163,10 @@ export class AuthService {
 			.limit(1);
 
 		if (verificationRecord.length === 0) {
-			throw new UnprocessableEntityError("Invalid verification token", [
+			throw new UnprocessableEntityError(t("auth.invalidVerificationToken"), [
 				{
 					field: "token",
-					message: "The provided verification token is invalid",
+					message: t("auth.invalidVerificationToken"),
 				},
 			]);
 		}
@@ -193,9 +198,10 @@ export class AuthService {
 		});
 
 		await sendEmailQueue.add("send-email", {
-			subject: "Reset Password",
+			subject: t("mail.subject.resetPassword"),
 			to: email,
 			template: "/auth/forgot-password",
+			lang: getCurrentLocale(),
 			variables: {
 				user_id: user.id,
 				user_name: user.name,
@@ -209,10 +215,10 @@ export class AuthService {
 		const passwordReset =
 			await this._forgotPasswordRepository.findByToken(token);
 		if (!passwordReset) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "token",
-					message: "Invalid or expired password reset token",
+					message: t("auth.invalidResetToken"),
 				},
 			]);
 		}
@@ -221,10 +227,10 @@ export class AuthService {
 			where: eq(usersTable.id, passwordReset.user_id),
 		});
 		if (!user) {
-			throw new UnprocessableEntityError("Validation error", [
+			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "token",
-					message: "Invalid or expired password reset token",
+					message: t("auth.invalidResetToken"),
 				},
 			]);
 		}

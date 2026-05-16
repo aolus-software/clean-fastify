@@ -1,4 +1,5 @@
 import { ClickHouseClientManager, db } from "@database";
+import { t } from "@i18n";
 import { ResponseToolkit } from "@utils";
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -111,7 +112,7 @@ export default function (fastify: FastifyInstance) {
 			if (!allHealthy) {
 				return ResponseToolkit.error(
 					reply,
-					"One or more services are unhealthy",
+					t("health.someUnhealthy"),
 					503,
 					serviceStatus,
 				);
@@ -120,7 +121,7 @@ export default function (fastify: FastifyInstance) {
 			return ResponseToolkit.success(
 				reply,
 				serviceStatus,
-				"All services are healthy",
+				t("health.allHealthy"),
 			);
 		},
 	);
