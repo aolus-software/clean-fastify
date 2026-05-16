@@ -1,5 +1,9 @@
 import { db, role_permissionsTable, rolesTable } from "@database";
-import { NotFoundError, UnprocessableEntityError } from "@fastify-libs";
+import {
+	defaultSort,
+	NotFoundError,
+	UnprocessableEntityError,
+} from "@fastify-libs";
 import {
 	DatatableType,
 	PaginationResponse,
@@ -10,8 +14,6 @@ import {
 import { DatatableToolkit } from "@utils";
 import { and, asc, desc, eq, ilike, ne, not, or, SQL } from "drizzle-orm";
 import { injectable } from "tsyringe";
-
-import { defaultSort } from "@/libs/fastify/default/sort";
 
 import { DbTransaction } from ".";
 @injectable()

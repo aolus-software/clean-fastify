@@ -126,19 +126,15 @@ async function main() {
 	const migrator = new ClickHouseMigrator();
 	const command = process.argv[2];
 
-	let executed: string[] = [];
-	let all: Array<IMigrationFile> = [];
-	let pending: Array<IMigrationFile> = [];
-
 	switch (command) {
 		case "migrate":
 			await migrator.migrate();
 			break;
-		case "status":
+		case "status": {
 			await migrator.initialize();
-			executed = await migrator.getExecutedMigrations();
-			all = await migrator.getMigrationFiles();
-			pending = all.filter((m) => !executed.includes(m.version));
+			const executed = await migrator.getExecutedMigrations();
+			const all = await migrator.getMigrationFiles();
+			const pending = all.filter((m) => !executed.includes(m.version));
 
 			// eslint-disable-next-line no-console
 			console.log(`Executed: ${executed.length}`);
@@ -148,11 +144,11 @@ async function main() {
 			if (pending.length > 0) {
 				// eslint-disable-next-line no-console
 				console.log("Pending migrations:");
-
 				// eslint-disable-next-line no-console
 				pending.forEach((m) => console.log(`  - ${m.version}_${m.name}`));
 			}
 			break;
+		}
 		default:
 			// eslint-disable-next-line no-console
 			console.log("Usage: npm run migrate:clickhouse [migrate|status]");

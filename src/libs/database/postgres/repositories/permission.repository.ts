@@ -1,5 +1,9 @@
 import { db, permissionsTable } from "@database";
-import { NotFoundError, UnprocessableEntityError } from "@fastify-libs";
+import {
+	defaultSort,
+	NotFoundError,
+	UnprocessableEntityError,
+} from "@fastify-libs";
 import {
 	DatatableType,
 	PaginationResponse,
@@ -9,8 +13,6 @@ import {
 } from "@types";
 import { and, asc, desc, eq, ilike, not, or, SQL } from "drizzle-orm";
 import { injectable } from "tsyringe";
-
-import { defaultSort } from "@/libs/fastify/default/sort";
 
 import { DbTransaction } from ".";
 
@@ -87,7 +89,7 @@ export class PermissionRepository {
 			Object.keys(validateOrderBy) as OrderableKey[]
 		).includes(orderBy as OrderableKey)
 			? (orderBy as OrderableKey)
-			: ("id" as OrderableKey);
+			: "id";
 
 		const orderColumn = validateOrderBy[normalizedOrderBy];
 

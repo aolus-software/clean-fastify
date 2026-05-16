@@ -1,26 +1,29 @@
 import { RedisConfig } from "@config";
-import Redis from "ioredis";
+import { RedisClient as BunRedisClient } from "bun";
+import IORedis from "ioredis";
+
+function buildRedisUrl(): string {
+	const auth = RedisConfig.REDIS_PASSWORD
+		? `:${encodeURIComponent(RedisConfig.REDIS_PASSWORD)}@`
+		: "";
+	return `redis://${auth}${RedisConfig.REDIS_HOST}:${RedisConfig.REDIS_PORT}/${RedisConfig.REDIS_DB}`;
+}
 
 export class RedisClient {
-	private static redis: Redis | null = null;
-	private static queueRedis: Redis | null = null;
+	private static redis: BunRedisClient | null = null;
+	private static queueRedis: IORedis | null = null;
 
-	static getRedisClient(): Redis {
+	static getRedisClient(): BunRedisClient {
 		if (!this.redis) {
-			this.redis = new Redis({
-				host: RedisConfig.REDIS_HOST,
-				port: RedisConfig.REDIS_PORT,
-				password: RedisConfig.REDIS_PASSWORD || undefined,
-				db: RedisConfig.REDIS_DB,
-			});
+			this.redis = new BunRedisClient(buildRedisUrl());
 		}
 
 		return this.redis;
 	}
 
-	static getQueueRedisClient(): Redis {
+	static getQueueRedisClient(): IORedis {
 		if (!this.queueRedis) {
-			this.queueRedis = new Redis({
+			this.queueRedis = new IORedis({
 				host: RedisConfig.REDIS_HOST,
 				port: RedisConfig.REDIS_PORT,
 				password: RedisConfig.REDIS_PASSWORD || undefined,
