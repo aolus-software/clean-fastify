@@ -78,26 +78,36 @@
 	"settings.users.passwordChanged": "Password changed",
 	"settings.users.emailExists": "Email already exists",
 	"settings.users.invalidRoles": "One or more roles are invalid",
-
 	"settings.roles.fetched": "Roles fetched",
 	"settings.roles.created": "Role created",
 	"settings.roles.detailFetched": "Role detail fetched",
 	"settings.roles.updated": "Role updated",
 	"settings.roles.deleted": "Role deleted",
 	"settings.roles.invalidPermissions": "One or more permissions are invalid",
-
 	"settings.permissions.fetched": "Permissions fetched",
 	"settings.permissions.created": "Permission created",
 	"settings.permissions.detailFetched": "Permission detail fetched",
 	"settings.permissions.updated": "Permission updated",
 	"settings.permissions.deleted": "Permission deleted",
-
 	"settings.select.permissionsFetched": "Permission select options fetched",
 	"settings.select.rolesFetched": "Role select options fetched",
+	"settings.users.notFound": "User not found",
+	"settings.users.verificationEmailSent": "Verification email sent",
+	"settings.users.resetPasswordEmailSent": "Reset password email sent",
+	"settings.roles.notFound": "Role not found",
+	"settings.roles.nameExists": "The role name {{name}} already exists",
+	"settings.permissions.notFound": "Permission not found",
+	"settings.permissions.nameExists": "Permission already exists: {{name}}",
 
 	"health.allHealthy": "All services are healthy",
 	"health.someUnhealthy": "One or more services are unhealthy",
+	"health.alive": "Service is alive",
 
 	"mail.subject.verification": "Email verification",
-	"mail.subject.resetPassword": "Reset Password"
+	"mail.subject.resetPassword": "Reset Password",
+
+	"datatable.sortNotAllowed": "Sorting by {{field}} is not allowed. Allowed: {{allowed}}",
+	"datatable.filterNotAllowed": "Filtering by {{field}} is not allowed. Allowed: {{allowed}}",
+	"datatable.filterValueNotAllowed": "Must be one of {{allowed}}. Received: {{received}}",
+	"datatable.filterDateInvalid": "Expected an ISO date, or two comma-separated dates as start,end"
 }

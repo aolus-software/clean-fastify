@@ -1,5 +1,4 @@
 export { BadRequestError } from "./bad-request.error";
-export { ConflictError } from "./conflict.error";
 export { ForbiddenError } from "./forbidden.error";
 export { HttpError } from "./http.error";
 export { InternalServerError } from "./internal-server.error";

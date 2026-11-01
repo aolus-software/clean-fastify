@@ -1,22 +1,27 @@
 import "reflect-metadata";
 
-import { RBACSeeder } from "./rbac.seed";
-import { UserSeeder } from "./user.seed";
+import { client } from "@database";
 
-const run = async () => {
-	await RBACSeeder();
-	await UserSeeder();
+import { seedPermissions } from "./permission.seed";
+import { seedRoles } from "./role.seed";
+import { seedUsers } from "./user.seed";
+
+const seed = async (): Promise<void> => {
+	await seedPermissions();
+	await seedRoles();
+	await seedUsers();
 };
 
-await run()
-	.then(() => {
-		// eslint-disable-next-line
-		console.log("Seeding completed successfully");
-	})
-	.finally(() => {
+seed()
+	.then(async () => {
+		// eslint-disable-next-line no-console
+		console.log("Seeding completed");
+		await client.end();
 		process.exit(0);
 	})
-	.catch((error) => {
-		// eslint-disable-next-line
-		console.error("Error occurred during seeding:", error);
+	.catch(async (error: unknown) => {
+		// eslint-disable-next-line no-console
+		console.error("Seeding failed", error);
+		await client.end().catch(() => undefined);
+		process.exit(1);
 	});

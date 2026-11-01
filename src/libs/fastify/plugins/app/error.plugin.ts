@@ -1,7 +1,11 @@
-import { HttpError, UnprocessableEntityError } from "@fastify-libs";
+import {
+	BadRequestError,
+	HttpError,
+	UnprocessableEntityError,
+} from "@fastify-libs";
 import { issueFieldName, t, translateValidationIssue } from "@i18n";
 import { ResponseToolkit } from "@utils";
-import Fastify, { FastifyError } from "fastify";
+import { FastifyError } from "fastify";
 import fp from "fastify-plugin";
 
 interface ValidationIssueLike {
@@ -19,11 +23,6 @@ interface ValidationIssueLike {
 	schema?: { format?: string; pattern?: string };
 }
 
-interface ErrorWithStatusCode {
-	statusCode?: number;
-	message: string;
-}
-
 const fieldFromIssue = (err: ValidationIssueLike): string => {
 	const instancePath =
 		typeof err.instancePath === "string"
@@ -33,21 +32,40 @@ const fieldFromIssue = (err: ValidationIssueLike): string => {
 	if (Array.isArray(err.path) && err.path.length > 0) {
 		return issueFieldName(err);
 	}
-	if (typeof err.schemaPath === "string" && err.schemaPath) {
-		return err.schemaPath;
-	}
-	return "body";
+	return "general";
 };
+
+const badRequestCodes = new Set<string>([
+	"FST_ERR_CTP_INVALID_JSON_BODY",
+	"FST_ERR_CTP_EMPTY_JSON_BODY",
+	"FST_ERR_CTP_INVALID_CONTENT_LENGTH",
+	"FST_ERR_CTP_INVALID_TYPE",
+	"FST_ERR_CTP_EMPTY_TYPE",
+	"FST_ERR_CTP_INVALID_PARSE_TYPE",
+]);
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export default fp(async function (fastify) {
+	fastify.setNotFoundHandler(function (_request, reply) {
+		ResponseToolkit.error(reply, t("errors.routeNotFound"), 404);
+	});
+
 	fastify.setErrorHandler(function (error: FastifyError, request, reply) {
-		// Custom HTTP errors
 		if (error instanceof UnprocessableEntityError) {
 			ResponseToolkit.validationError(
 				reply,
-				error.validationErrors || [],
+				error.validationErrors ?? [],
 				error.message || t("validation.failed"),
+			);
+			return;
+		}
+
+		if (error instanceof BadRequestError && error.validationErrors) {
+			ResponseToolkit.validationError(
+				reply,
+				error.validationErrors,
+				error.message || t("errors.badRequest"),
+				400,
 			);
 			return;
 		}
@@ -55,11 +73,9 @@ export default fp(async function (fastify) {
 		if (error.validation) {
 			const errors = error.validation.map((err) => {
 				const issue = err as ValidationIssueLike;
-				const field = fieldFromIssue(issue);
 				const { key, vars } = translateValidationIssue(issue);
-				return { field, message: t(key, vars) };
+				return { field: fieldFromIssue(issue), message: t(key, vars) };
 			});
-
 			ResponseToolkit.validationError(reply, errors, t("validation.failed"));
 			return;
 		}
@@ -69,102 +85,44 @@ export default fp(async function (fastify) {
 			return;
 		}
 
-		// fastify validation error
-		if (error instanceof Fastify.errorCodes.FST_ERR_NOT_FOUND) {
-			ResponseToolkit.notFound(reply, t("errors.routeNotFound"));
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_BAD_STATUS_CODE) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_VALIDATION) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_INVALID_TYPE) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_EMPTY_TYPE) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_INVALID_HANDLER) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_INVALID_PARSE_TYPE) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_INVALID_MEDIA_TYPE) {
-			ResponseToolkit.error(reply, t("errors.unsupportedMediaType"), 415);
-			return;
-		}
-
-		if (
-			error instanceof Fastify.errorCodes.FST_ERR_CTP_INVALID_CONTENT_LENGTH
-		) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_EMPTY_JSON_BODY) {
-			ResponseToolkit.error(reply, t("errors.parseBody"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_REP_INVALID_PAYLOAD_TYPE) {
-			ResponseToolkit.error(reply, t("errors.badRequest"), 400);
-			return;
-		}
-
-		if (error instanceof Fastify.errorCodes.FST_ERR_CTP_BODY_TOO_LARGE) {
+		if (error.code === "FST_ERR_CTP_BODY_TOO_LARGE") {
 			ResponseToolkit.error(reply, t("errors.payloadTooLarge"), 413);
 			return;
 		}
 
-		if (
-			error instanceof Fastify.errorCodes.FST_ERR_FAILED_ERROR_SERIALIZATION
-		) {
-			ResponseToolkit.error(reply, t("errors.internal"), 500);
+		if (error.code === "FST_ERR_CTP_INVALID_MEDIA_TYPE") {
+			ResponseToolkit.error(reply, t("errors.unsupportedMediaType"), 415);
 			return;
 		}
 
-		if (error instanceof Fastify.errorCodes.FST_ERR_SEND_UNDEFINED_ERR) {
-			ResponseToolkit.error(reply, t("errors.internal"), 500);
+		if (badRequestCodes.has(error.code) || error instanceof SyntaxError) {
+			ResponseToolkit.validationError(
+				reply,
+				[{ field: "body", message: t("errors.parseBody") }],
+				t("errors.parseFailed"),
+				400,
+			);
 			return;
 		}
 
-		if (error instanceof Fastify.errorCodes.FST_ERR_REP_ALREADY_SENT) {
-			ResponseToolkit.error(reply, t("errors.internal"), 500);
+		if (error.statusCode === 429) {
+			reply.status(429).send({
+				status: 429,
+				success: false,
+				message: t("errors.tooManyRequests"),
+			});
 			return;
 		}
 
-		if (
-			(error as ErrorWithStatusCode).statusCode &&
-			(error as ErrorWithStatusCode).statusCode! >= 400 &&
-			(error as ErrorWithStatusCode).statusCode! < 500
-		) {
-			ResponseToolkit.error(reply, error.message, error.statusCode ?? 400);
+		if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+			ResponseToolkit.error(reply, t("errors.badRequest"), error.statusCode);
 			return;
 		}
 
-		request.log.error({
-			message: "APP Error",
-			error: error.message,
-			stack: error.stack,
-			name: error.name || "undefined",
-		});
-
+		request.log.error(
+			{ error: error.message, stack: error.stack, name: error.name },
+			"Unhandled error",
+		);
 		ResponseToolkit.error(reply, t("errors.internal"), 500);
 	});
 });

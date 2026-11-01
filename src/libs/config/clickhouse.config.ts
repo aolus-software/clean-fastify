@@ -1,11 +1,4 @@
-import { cleanEnv, str, url } from "envalid";
-
-const env = cleanEnv(process.env, {
-	CLICKHOUSE_HOST: url({ default: "http://localhost:8123" }),
-	CLICKHOUSE_USER: str({ default: "default" }),
-	CLICKHOUSE_PASSWORD: str({ default: "" }),
-	CLICKHOUSE_DATABASE: str({ default: "default" }),
-});
+import { env } from "./env.config";
 
 export interface IClickHouseConfig {
 	host: string;

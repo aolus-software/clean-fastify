@@ -1,48 +1,45 @@
-import { UserInformationCacheKey } from "@cache";
-import { UserRepository } from "@database";
 import { t } from "@i18n";
+import { AccessTokenPayload, SessionService } from "@services";
 import { UserInformation } from "@types";
-import { ResponseToolkit } from "@utils";
-import { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
+import { container } from "tsyringe";
+
+import { UnauthorizedError } from "../../error";
 
 declare module "fastify" {
-	interface FastifyInstance {
-		userInformation: UserInformation;
-	}
-
 	interface FastifyRequest {
-		authenticate(_reply: FastifyReply): Promise<void>;
+		authenticate(): Promise<void>;
 		userInformation: UserInformation;
 	}
 }
 
-// Authenticate user and load user information into request
-async function authenticate(this: FastifyRequest, reply: FastifyReply) {
+/**
+ * Verifies the bearer access token and loads the caller's UserInformation. Only `type: "access"`
+ * tokens signed with JWT_SECRET pass; a refresh token fails both the signature and the type check.
+ * A user who is missing, soft-deleted, or not active resolves to null and gets 401. Throws, so a
+ * module-level `onRequest` hook calling it stops the request.
+ */
+async function authenticate(this: FastifyRequest): Promise<void> {
+	let payload: Partial<AccessTokenPayload>;
 	try {
-		await this.jwtVerify();
-		const userJwt = this.user as { id: string };
-		const cacheKey = UserInformationCacheKey(userJwt.id);
-		const cacheUser = await this.server.redis.get(cacheKey);
-		if (!cacheUser) {
-			const userRepo = new UserRepository().UserInformation(userJwt.id);
-			const userData = await userRepo;
-			await this.server.redis.set(
-				cacheKey,
-				JSON.stringify(userData),
-				"EX",
-				3600 * 24,
-			);
-			this.userInformation = userData;
-		} else {
-			this.userInformation = JSON.parse(cacheUser);
-		}
+		payload = await this.jwtVerify<Partial<AccessTokenPayload>>();
 	} catch {
-		ResponseToolkit.unauthorized(reply, t("auth.authRequired"));
-		return;
+		throw new UnauthorizedError(t("auth.invalidToken"));
 	}
 
-	return;
+	if (payload.type !== "access" || !payload.id) {
+		throw new UnauthorizedError(t("auth.invalidToken"));
+	}
+
+	const user = await container
+		.resolve(SessionService)
+		.getUserInformation(payload.id);
+	if (!user) {
+		throw new UnauthorizedError(t("auth.userNotFound"));
+	}
+
+	this.userInformation = user;
 }
 
 export default fp(

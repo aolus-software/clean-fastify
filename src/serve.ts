@@ -8,7 +8,7 @@ const app = createAppInstance();
 
 const start = async () => {
 	try {
-		await app.listen({ port: AppConfig.APP_PORT });
+		await app.listen({ host: "0.0.0.0", port: AppConfig.APP_PORT });
 		// eslint-disable-next-line no-console
 		console.log(`Server listening on port ${AppConfig.APP_PORT}`);
 		app.log.info(`Server listening on port ${AppConfig.APP_PORT}`);

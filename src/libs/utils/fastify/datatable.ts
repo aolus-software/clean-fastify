@@ -1,55 +1,150 @@
-import { defaultSort, paginationLength } from "@libs/fastify";
-import { DatatableType, SortDirection } from "@types";
+import { BadRequestError, defaultSort, paginationLength } from "@fastify-libs";
+import { t } from "@i18n";
+import { DatatableType, FilterField, SortDirection } from "@types";
 import { PgColumn } from "drizzle-orm/pg-core";
 import { FastifyRequest } from "fastify";
 
+import { DateToolkit } from "../date";
+
+type ListQuery = {
+	page?: number;
+	perPage?: number;
+	search?: string;
+	sort?: string;
+	sortDirection?: SortDirection;
+};
+
 export class DatatableToolkit {
+	/**
+	 * Builds `DatatableType` from a list route's validated query. `filter[<key>]` parameters are
+	 * read off the raw URL: the Zod query schema cannot name bracketed keys and strips them, so
+	 * `request.query` never carries a filter. Values stay strings; the repository interprets them.
+	 */
 	static parseFilter(request: FastifyRequest): DatatableType {
-		const query = request.query as Record<string, string>;
+		const query = request.query as ListQuery;
+		const filter: Record<string, boolean | string> = {};
 
-		const page: number = query.page ? parseInt(query.page, 10) : 1;
-		const perPage: number = query.perPage
-			? parseInt(query.perPage, 10)
-			: paginationLength;
-		const search: string | null = query.search ? query.search : null;
-		const orderBy: string = query.sort ? query.sort : defaultSort;
-		const orderDirection: SortDirection = query.sortDirection
-			? (query.sortDirection as SortDirection)
-			: "desc";
-
-		// Use repository for user listing
-		const filter: Record<string, boolean | string | Date> = {};
-		for (const key in query) {
-			if (key.startsWith("filter[")) {
-				const filterKey = key.slice(7, -1); // extract key inside brackets
-				const value = query[key];
-				if (value === "true") filter[filterKey] = true;
-				else if (value === "false") filter[filterKey] = false;
-				else if (!isNaN(Date.parse(value))) filter[filterKey] = new Date(value);
-				else filter[filterKey] = value;
-			}
+		for (const [key, value] of new URL(request.url, "http://localhost")
+			.searchParams) {
+			if (!key.startsWith("filter[") || !key.endsWith("]")) continue;
+			const filterKey = key.slice(7, -1);
+			if (!filterKey) continue;
+			if (value === "true") filter[filterKey] = true;
+			else if (value === "false") filter[filterKey] = false;
+			else filter[filterKey] = value;
 		}
 
 		return {
-			page,
-			limit: perPage,
-			search,
-			sort: orderBy,
-			sortDirection: orderDirection,
-			filter: Object.keys(filter).length ? filter : null,
+			page: query.page ?? 1,
+			perPage: query.perPage ?? paginationLength,
+			search: query.search || undefined,
+			sort: query.sort ?? defaultSort,
+			sortDirection: query.sortDirection ?? "desc",
+			filter: Object.keys(filter).length > 0 ? filter : undefined,
 		};
 	}
 
-	static parseSort(validateOrderBy: Record<string, PgColumn>, orderBy: string) {
-		type OrderableKey = keyof typeof validateOrderBy;
-		const normalizedOrderBy: OrderableKey = Object.keys(
-			validateOrderBy,
-		).includes(orderBy)
-			? orderBy
-			: "id";
+	static parseSort(
+		orderableColumns: Record<string, PgColumn>,
+		orderBy: string,
+	): PgColumn {
+		const column: PgColumn | undefined = orderableColumns[orderBy];
+		if (!column) {
+			throw new BadRequestError(t("validation.failed"), [
+				{
+					field: "sort",
+					message: t("datatable.sortNotAllowed", {
+						field: orderBy,
+						allowed: Object.keys(orderableColumns).join(", "),
+					}),
+				},
+			]);
+		}
+		return column;
+	}
 
-		const orderColumn = validateOrderBy[normalizedOrderBy];
+	static assertFilter(
+		filter: Record<string, boolean | string> | undefined,
+		fields: readonly FilterField[],
+	): void {
+		if (!filter) return;
 
-		return orderColumn;
+		const allowed = fields.map((f) => (typeof f === "string" ? f : f.field));
+		const unknownKeys = Object.keys(filter).filter(
+			(key) => !allowed.includes(key),
+		);
+		if (unknownKeys.length > 0) {
+			throw new BadRequestError(
+				t("validation.failed"),
+				unknownKeys.map((key) => ({
+					field: `filter[${key}]`,
+					message: t("datatable.filterNotAllowed", {
+						field: key,
+						allowed: allowed.join(", "),
+					}),
+				})),
+			);
+		}
+
+		for (const field of fields) {
+			if (typeof field === "string" || !("enum" in field)) continue;
+			const raw = filter[field.field];
+			if (raw === undefined) continue;
+			const invalid = DatatableToolkit.filterValues(raw).filter(
+				(value) => !field.enum.includes(value),
+			);
+			if (invalid.length > 0) {
+				throw new BadRequestError(t("validation.failed"), [
+					{
+						field: `filter[${field.field}]`,
+						message: t("datatable.filterValueNotAllowed", {
+							allowed: field.enum.join(", "),
+							received: invalid.join(", "),
+						}),
+					},
+				]);
+			}
+		}
+	}
+
+	static filterValues(value: boolean | string): string[] {
+		return value
+			.toString()
+			.split(",")
+			.map((part) => part.trim())
+			.filter((part) => part.length > 0);
+	}
+
+	/**
+	 * A single date matches that whole day in APP_TIMEZONE; `start,end` spans start-of-first-day
+	 * to end-of-last-day. Anything unparseable is a 400, never an Invalid Date reaching the driver.
+	 */
+	static filterDateRange(
+		value: boolean | string,
+		field: string,
+	): { from: Date; to: Date } {
+		const invalid = (): BadRequestError =>
+			new BadRequestError(t("validation.failed"), [
+				{
+					field: `filter[${field}]`,
+					message: t("datatable.filterDateInvalid"),
+				},
+			]);
+
+		const parts = DatatableToolkit.filterValues(value);
+		if (parts.length === 0 || parts.length > 2) throw invalid();
+
+		const parsed = parts.map((part) => {
+			if (!DateToolkit.isValid(part)) throw invalid();
+			const date = DateToolkit.parse(part);
+			if (!date.isValid()) throw invalid();
+			return date;
+		});
+
+		const from = DateToolkit.startOfDay(parsed[0]).toDate();
+		const to = DateToolkit.endOfDay(parsed[parsed.length - 1]).toDate();
+		if (from > to) throw invalid();
+
+		return { from, to };
 	}
 }

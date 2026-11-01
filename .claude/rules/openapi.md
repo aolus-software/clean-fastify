@@ -1,86 +1,37 @@
-# Rule: OpenAPI / Swagger documentation
+# Rule: OpenAPI documentation
 
-The API spec is generated at runtime from Fastify route metadata by `swagger.plugin.ts` (`src/libs/fastify/plugins/externals/swagger.plugin.ts`), which combines:
+The spec is generated at runtime from route metadata by
+`src/libs/fastify/plugins/externals/swagger.plugin.ts`: `@fastify/swagger` collects the route schemas,
+`jsonSchemaTransform` converts Zod to JSON Schema, and `@scalar/fastify-api-reference` serves the UI.
+Nothing is hand-written.
 
-- `@fastify/swagger` — collects schemas
-- `fastify-type-provider-zod` (`jsonSchemaTransform`) — converts Zod → JSON Schema
-- `@scalar/fastify-api-reference` — renders the spec at `/docs` (and `/documentation`)
+## The gate
 
-The raw JSON spec is at `/documentation/json`. You **do not** write OpenAPI YAML by hand — every field in the spec comes from how routes are declared.
+Docs are registered **only when `ENABLE_API_DOCS=true`**. The flag defaults to `false` and is
+independent of `NODE_ENV`, so an environment that never sets it cannot expose the schema. When on:
 
-## Mandatory per-route metadata
+- `GET /docs` — Scalar UI (redirects to `/docs/`)
+- `GET /docs/openapi.json` — the spec
 
-Every `fastify.get / .post / .patch / .delete` MUST declare a `schema` object containing:
+Don't add a second switch (an `APP_ENV !== "production"` check) beside the flag.
 
-1. **Validation schemas** — `body`, `query`, `params` as applicable. These are Zod schemas from the module's `./schema.ts` and feed both runtime validation **and** the spec.
-2. **`response`** — a map keyed by status code, each pointing at a Zod schema. Include every code the route can legitimately return:
-   - `200` for successful GET/PATCH, `201` for POST that creates
-   - `400` if input validation can fail in the service layer (e.g. duplicate email)
-   - `401` if the route uses `request.authenticate` in `preHandler`
-   - `403` if `requireRoles` / `requirePermissions` runs
-   - `404` if any path param resolves to a row that may not exist
-   - `422` for business-rule violations (`UnprocessableEntityError`)
-   - `500` so consumers know the shape on unexpected failure
-3. **`tags`** — single-element array. Top-level resources → single word (`"Auth"`, `"Profile"`, `"Health"`). Nested resources → `"Group/Subresource"` (`"Settings/Users"`, `"Settings/Roles"`).
-4. **`description`** — explains the auth/permission requirement and the side effects.
+## Per-route metadata
 
-Example (from `routes/auth/index.ts`):
+Every route's `schema` declares:
 
-```ts
-fastify.post(
-	"/login",
-	{
-		schema: {
-			tags: ["Auth"],
-			description: "User login endpoint.",
-			body: LoginBodySchema,
-			response: {
-				200: LoginResponseSchema,
-				401: UnauthorizedResponseSchema,
-				422: ValidationErrorResponseSchema,
-				500: ServerErrorResponseSchema,
-			},
-		},
-	},
-	async (request, reply) => {
-		/* ... */
-	},
-);
-```
+1. **Validation schemas** — `body`, `querystring`, `params` from `./schema.ts`.
+2. **`response`** — a status-keyed map listing every status the route can return, each an envelope
+   schema from `@utils` ([errors-and-responses.md](./errors-and-responses.md)).
+3. **`tags`** — `["General"]`, `["Auth"]`, `["Profile"]`, `["Settings/Users"]`, `["Settings/Roles"]`,
+   `["Settings/Permissions"]`, `["Settings/Select Options"]`. Reuse the exact casing.
+4. **`summary`** (short) and **`description`** naming the permission requirement and side effects.
+5. **`security: [{ BearerAuth: [] }]`** on every protected route. Public routes omit it.
 
-## Zod schemas — what the spec needs
-
-- Every field in a request/response schema gets `.describe(...)`. The Scalar UI renders descriptions next to each property.
-- Use Zod's semantic refinements where possible: `z.string().email()`, `z.string().uuid()`, `z.string().datetime()` — they all transform into the right `format` in the resulting JSON Schema.
-- Reuse domain enums from `@database` (e.g. `z.nativeEnum(UserStatusEnum)`), not a fresh `z.enum(["active", ...])`.
-- Strong-password fields use `.regex(StrongPassword)` from `@fastify-libs`.
-- **Wrap response data** with `createSuccessResponseSchema(<DataSchema>)` or `createSuccessPaginationResponseSchema(<DataSchema>)` from `@utils`. `ResponseToolkit.success(...)` always serialises as `{ status, success, message, data }`, so the schema must wrap accordingly — using the raw `DataSchema` directly will fail serialisation.
-- Use the **pre-built** error schemas in `@utils`: `UnauthorizedResponseSchema`, `ForbiddenResponseSchema`, `NotFoundResponseSchema`, `BadRequestResponseSchema`, `ValidationErrorResponseSchema`, `ServerErrorResponseSchema`. Never inline error shapes per-route.
-
-## Auth and security
-
-`swagger.plugin.ts` registers a `BearerAuth` security scheme (HTTP, `bearer`, JWT). To mark a route as requiring auth in the spec, add `security` inside `schema`:
-
-```ts
-schema: {
-  tags: ["Settings/Users"],
-  description: "List users. Requires 'user list' permission.",
-  security: [{ BearerAuth: [] }],
-  // ...
-}
-```
-
-Public routes (`/auth/login`, `/auth/register`, `/health`, `/`) omit `security` entirely. Don't set it globally — keep it explicit per protected route so the spec matches actual `preHandler` wiring.
-
-## Runtime behaviour
-
-- Swagger and Scalar are registered for every environment in the current setup. If you add an "off in production" toggle, do it in `swagger.plugin.ts` — never disable the plugin by deleting its file.
-- The plugin runs as part of the **externals** autoload bucket (`src/libs/fastify/plugins/externals/`). Don't move it — order matters: helmet, cors, rate-limit, swagger run before app plugins (auth, di, error).
+The plugin also attaches an `Accept-Language` header parameter (`en` | `id`) to every operation.
 
 ## Don't
 
-- Don't hand-edit any `openapi.json` — none is checked in; the spec is in-memory.
-- Don't add `tags` per-route as an arbitrary string. The same casing must be reused so Swagger groups related endpoints.
-- Don't omit response codes that the route can actually return — the spec lies to consumers if you do.
-- Don't pass a non-Zod schema (Ajv JSON Schema object, TypeBox, etc.) to a route's `schema.body` / `schema.response`. The validator and serializer compilers are wired exclusively to Zod via `fastify-type-provider-zod`.
-- Don't return `ResponseToolkit.success(data)` while declaring `response: { 200: RawDataSchema }`. Always wrap with `createSuccessResponseSchema(RawDataSchema)`.
+- Don't hand-edit or commit an `openapi.json`.
+- Don't omit a status the route can return, or list one it cannot.
+- Don't pass a non-Zod schema to `schema.body` / `schema.response`.
+- Don't declare a raw data schema as a response — the handler always sends the envelope.

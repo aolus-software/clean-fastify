@@ -4,13 +4,13 @@
 
 ### Script Consistency
 
-- [ ] **Fix typo in lint:fix script**
+- [x] **Fix typo in lint:fix script**
   - Current: `"link:fix"` (typo - should be `lint:fix`)
   - Fix to: `"lint:fix": "bun run eslint . --ext .ts,.js --fix"`
 
 ### ESLint Configuration
 
-- [ ] **Add import sorting rules**
+- [x] **Add import sorting rules**
   - Missing: `eslint-plugin-simple-import-sort` (not installed)
   - Add import ordering rules (like clean-hono and clean-elysia)
   - Add `eslint-plugin-import` for duplicate detection
@@ -86,20 +86,20 @@
 
 ### Developer Experience
 
-- [ ] **Add Makefile** (like clean-hono)
+- [x] **Add Makefile** (like clean-hono)
   - Provide convenient shortcuts for common tasks
   - Example: `make dev-all`, `make fresh`, `make reset`
 
 ### Environment Files
 
-- [ ] **Enhance .env.example**
+- [x] **Enhance .env.example**
   - Add more detailed comments for each variable
   - Document which variables are required vs optional
   - Match clean-hono's detailed env structure
 
 ### Database
 
-- [ ] **Add database seed scripts to package.json**
+- [x] **Add database seed scripts to package.json**
   - No `db:seed` script in package.json
   - Add: `db:generate`, `db:migrate`, `db:push`, `db:studio`, `db:drop`, `db:seed`
   - Add ClickHouse migration scripts
@@ -113,7 +113,7 @@
 
 ### Configuration
 
-- [ ] **Consolidate configuration exports**
+- [x] **Consolidate configuration exports**
   - Add a single config index with all configs
   - Ensure consistent naming across config files
 

@@ -1,56 +1,70 @@
-import { AppConfig } from "@config/app.config";
+import { AppConfig } from "@config";
 import { t } from "@i18n";
-import { DateToolkit, ResponseToolkit } from "@utils";
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import {
+	createSuccessResponseSchema,
+	DateToolkit,
+	ResponseToolkit,
+} from "@utils";
+import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
 export default function (fastify: FastifyInstance) {
-	fastify.withTypeProvider<ZodTypeProvider>().get(
+	const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+	// ======================
+	// GET: /
+	// ======================
+	app.get(
 		"/",
 		{
 			schema: {
-				tags: ["Index"],
-				description: "Returns a welcome message indicating the API is running.",
+				tags: ["General"],
+				summary: "API root",
+				description: "Basic information about the API.",
 				response: {
-					200: z.object({
-						status: z.number(),
-						success: z.boolean(),
-						message: z.string(),
-						data: z.object({
-							AppName: z.string(),
-							AppTimezone: z.string(),
-							AppEnvironment: z.string(),
-							CurrentTime: z.string(),
+					200: createSuccessResponseSchema(
+						z.object({
+							appName: z.string().describe("APP_NAME"),
+							appEnv: z.string().describe("NODE_ENV"),
+							date: z.string().describe("Current time in APP_TIMEZONE"),
 						}),
-					}),
-					500: z.object({
-						status: z.number(),
-						success: z.boolean(),
-						message: z.string(),
-					}),
+					),
 				},
 			},
 		},
-		async (_request: FastifyRequest, reply: FastifyReply) => {
-			return ResponseToolkit.success<{
-				AppName: string;
-				AppTimezone: string;
-				AppEnvironment: string;
-				CurrentTime: string;
-			}>(
+		async (_request, reply) => {
+			return ResponseToolkit.success(
 				reply,
 				{
-					AppName: AppConfig.APP_NAME,
-					AppTimezone: AppConfig.APP_TIMEZONE,
-					AppEnvironment: AppConfig.APP_ENV,
-					CurrentTime: DateToolkit.getDateTimeInformativeWithTimezone(
+					appName: AppConfig.APP_NAME,
+					appEnv: AppConfig.APP_ENV,
+					date: DateToolkit.getDateTimeInformativeWithTimezone(
 						DateToolkit.now(),
 					),
 				},
 				t("common.apiRunning"),
-				200,
 			);
+		},
+	);
+
+	// ======================
+	// GET: /live
+	// ======================
+	app.get(
+		"/live",
+		{
+			schema: {
+				tags: ["General"],
+				summary: "Liveness check",
+				description: "200 while the process is up; checks no dependency.",
+				response: {
+					200: createSuccessResponseSchema(z.object({ alive: z.boolean() })),
+				},
+			},
+		},
+		async (_request, reply) => {
+			return ResponseToolkit.success(reply, { alive: true }, t("health.alive"));
 		},
 	);
 }

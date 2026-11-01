@@ -12,9 +12,15 @@ const worker = new Worker<EmailOptions>(
 		const lang = job.data.lang ?? DEFAULT_LOCALE;
 		try {
 			await runWithLocale(lang, () => EmailService.sendEmail(job.data));
-			logger.info({}, `Email job processed for ${job.data.to}`);
+			logger.info(
+				{ jobId: job.id, template: job.data.template },
+				"Email job processed",
+			);
 		} catch (error) {
-			logger.error(error, `Failed to process email job for ${job.data.to}`);
+			logger.error(
+				{ err: error, jobId: job.id, template: job.data.template },
+				"Failed to process email job",
+			);
 			throw error;
 		}
 	},

@@ -1,41 +1,46 @@
-import { AppConfig } from "@config";
-import { UnprocessableEntityError } from "@fastify-libs";
 import { t } from "@i18n";
 import { AuthService } from "@services";
-import { UserInformation } from "@types";
-import { ResponseToolkit, StrToolkit } from "@utils";
+import {
+	BadRequestResponseSchema,
+	NullCreatedResponseSchema,
+	NullSuccessResponseSchema,
+	ResponseToolkit,
+	ServerErrorResponseSchema,
+	UnauthorizedResponseSchema,
+	ValidationErrorResponseSchema,
+} from "@utils";
 import { FastifyInstance } from "fastify";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
 
 import {
-	ForgotPasswordBodySchema,
+	EmailBodySchema,
 	LoginBodySchema,
 	LoginResponseSchema,
 	RefreshTokenBodySchema,
 	RefreshTokenResponseSchema,
 	RegisterBodySchema,
-	ResendVerificationBodySchema,
 	ResetPasswordBodySchema,
-	ServerErrorResponseSchema,
-	SuccessResponseSchema,
-	UnauthorizedResponseSchema,
-	ValidationErrorResponseSchema,
 	VerifyEmailBodySchema,
 } from "./schema";
 
 export default function (fastify: FastifyInstance) {
+	const app = fastify.withTypeProvider<ZodTypeProvider>();
+
 	// ======================
 	// POST: /auth/login
 	// ======================
-	fastify.post(
+	app.post(
 		"/login",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "User login endpoint.",
+				summary: "Log in",
+				description:
+					"Exchange email and password for an access token (1 day) and a refresh token (7 days). Unknown email and wrong password get the same 400.",
 				body: LoginBodySchema,
 				response: {
 					200: LoginResponseSchema,
-					401: UnauthorizedResponseSchema,
+					400: BadRequestResponseSchema,
 					422: ValidationErrorResponseSchema,
 					500: ServerErrorResponseSchema,
 				},
@@ -43,41 +48,16 @@ export default function (fastify: FastifyInstance) {
 		},
 		async (request, reply) => {
 			const authService = fastify.di.resolve(AuthService);
-			const { email, password } = request.body as {
-				email: string;
-				password: string;
-			};
-
-			const userInfo = await authService.login(email, password);
-
-			const accessToken = await reply.jwtSign(
-				{ id: userInfo.id },
-				{ expiresIn: `${AppConfig.APP_JWT_EXPIRES_IN}s` },
+			const user = await authService.login(
+				request.body.email,
+				request.body.password,
 			);
+			const tokens = await authService.issueTokens(fastify.jwt, user.id);
 
-			const refreshToken = await reply.jwtSign(
-				{ id: userInfo.id, type: "refresh" },
-				{
-					expiresIn: `${AppConfig.APP_JWT_REFRESH_EXPIRES_IN}s`,
-					jti: StrToolkit.random(32),
-				},
-			);
-
-			await authService.storeRefreshToken(userInfo.id, refreshToken);
-
-			return ResponseToolkit.success<{
-				accessToken: string;
-				refreshToken: string;
-				user: UserInformation;
-			}>(
+			return ResponseToolkit.success(
 				reply,
-				{
-					accessToken,
-					refreshToken,
-					user: userInfo,
-				},
+				{ user, ...tokens },
 				t("auth.loginSuccess"),
-				200,
 			);
 		},
 	);
@@ -85,61 +65,60 @@ export default function (fastify: FastifyInstance) {
 	// ======================
 	// POST: /auth/register
 	// ======================
-	fastify.post(
+	app.post(
 		"/register",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "User registration endpoint.",
+				summary: "Register",
+				description:
+					"Create an unverified account and email a verification link. A live account with the same email is a 422.",
 				body: RegisterBodySchema,
 				response: {
-					201: SuccessResponseSchema,
+					201: NullCreatedResponseSchema,
 					422: ValidationErrorResponseSchema,
 					500: ServerErrorResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const authService = fastify.di.resolve(AuthService);
-			const { name, email, password } = request.body as {
-				name: string;
-				email: string;
-				password: string;
-			};
-
-			await authService.register({ name, email, password });
-
-			return ResponseToolkit.success(reply, {}, t("auth.registerSuccess"), 201);
+			await fastify.di.resolve(AuthService).register(request.body);
+			return ResponseToolkit.success(
+				reply,
+				null,
+				t("auth.registerSuccess"),
+				201,
+			);
 		},
 	);
 
 	// ======================
 	// POST: /auth/resend-verification
 	// ======================
-	fastify.post(
+	app.post(
 		"/resend-verification",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "Resend email verification endpoint.",
-				body: ResendVerificationBodySchema,
+				summary: "Resend verification email",
+				description:
+					"Always 200, whether or not the email exists or is already verified, so the response reveals nothing about the account.",
+				body: EmailBodySchema,
 				response: {
-					200: SuccessResponseSchema,
+					200: NullSuccessResponseSchema,
 					422: ValidationErrorResponseSchema,
 					500: ServerErrorResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const service = fastify.di.resolve(AuthService);
-			const { email } = request.body as { email: string };
-			await service.resendVerification({ email });
-
+			await fastify.di
+				.resolve(AuthService)
+				.resendVerification(request.body.email);
 			return ResponseToolkit.success(
 				reply,
-				{},
+				null,
 				t("auth.resendVerificationSent"),
-				200,
 			);
 		},
 	);
@@ -147,98 +126,93 @@ export default function (fastify: FastifyInstance) {
 	// ======================
 	// POST: /auth/verify-email
 	// ======================
-	fastify.post(
+	app.post(
 		"/verify-email",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "Email verification endpoint.",
+				summary: "Verify email",
+				description:
+					"Consume a verification token. An unknown, expired, or already-used token is a 400.",
 				body: VerifyEmailBodySchema,
 				response: {
-					200: SuccessResponseSchema,
+					200: NullSuccessResponseSchema,
+					400: BadRequestResponseSchema,
 					422: ValidationErrorResponseSchema,
 					500: ServerErrorResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const service = fastify.di.resolve(AuthService);
-			const { token } = request.body as { token: string };
-			await service.verifyEmail({ token });
-
-			return ResponseToolkit.success(reply, {}, t("auth.emailVerified"), 200);
+			await fastify.di.resolve(AuthService).verifyEmail(request.body.token);
+			return ResponseToolkit.success(reply, null, t("auth.emailVerified"));
 		},
 	);
 
 	// ======================
 	// POST: /auth/forgot-password
 	// ======================
-	fastify.post(
+	app.post(
 		"/forgot-password",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "Forgot password endpoint.",
-				body: ForgotPasswordBodySchema,
+				summary: "Request a password reset",
+				description:
+					"Always 200, whether or not the email exists. Issuing a link revokes earlier unused links.",
+				body: EmailBodySchema,
 				response: {
-					200: SuccessResponseSchema,
+					200: NullSuccessResponseSchema,
 					422: ValidationErrorResponseSchema,
 					500: ServerErrorResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const service = fastify.di.resolve(AuthService);
-			const { email } = request.body as { email: string };
-			await service.forgotPassword(email);
-
-			return ResponseToolkit.success(
-				reply,
-				{},
-				t("auth.forgotPasswordSent"),
-				200,
-			);
+			await fastify.di.resolve(AuthService).forgotPassword(request.body.email);
+			return ResponseToolkit.success(reply, null, t("auth.forgotPasswordSent"));
 		},
 	);
 
 	// ======================
 	// POST: /auth/reset-password
 	// ======================
-	fastify.post(
+	app.post(
 		"/reset-password",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "Reset password endpoint.",
+				summary: "Reset password",
+				description:
+					"Consume a reset token and set a new password. Ends the user's sessions. An unknown, expired, or already-used token is a 400.",
 				body: ResetPasswordBodySchema,
 				response: {
-					200: SuccessResponseSchema,
+					200: NullSuccessResponseSchema,
+					400: BadRequestResponseSchema,
 					422: ValidationErrorResponseSchema,
 					500: ServerErrorResponseSchema,
 				},
 			},
 		},
 		async (request, reply) => {
-			const service = fastify.di.resolve(AuthService);
-			const { token, newPassword } = request.body as {
-				token: string;
-				newPassword: string;
-			};
-			await service.resetPassword(token, newPassword);
-
-			return ResponseToolkit.success(reply, {}, t("auth.passwordReset"), 200);
+			await fastify.di
+				.resolve(AuthService)
+				.resetPassword(request.body.token, request.body.newPassword);
+			return ResponseToolkit.success(reply, null, t("auth.passwordReset"));
 		},
 	);
 
 	// ======================
 	// POST: /auth/refresh
 	// ======================
-	fastify.post(
+	app.post(
 		"/refresh",
 		{
 			schema: {
 				tags: ["Auth"],
-				description: "Refresh access token using refresh token.",
+				summary: "Refresh tokens",
+				description:
+					"Exchange the current refresh token for a new pair. Only a refresh token signed with JWT_REFRESH_SECRET and carrying type 'refresh' is accepted; an access token is rejected. The old refresh token stops working.",
 				body: RefreshTokenBodySchema,
 				response: {
 					200: RefreshTokenResponseSchema,
@@ -249,81 +223,10 @@ export default function (fastify: FastifyInstance) {
 			},
 		},
 		async (request, reply) => {
-			const authService = fastify.di.resolve(AuthService);
-			const { refreshToken } = request.body as { refreshToken: string };
-
-			try {
-				const decoded = fastify.jwt.verify(refreshToken);
-
-				if (
-					typeof decoded === "object" &&
-					decoded !== null &&
-					"type" in decoded &&
-					decoded.type !== "refresh"
-				) {
-					throw new UnprocessableEntityError(t("auth.invalidTokenType"), [
-						{
-							field: "refreshToken",
-							message: t("auth.invalidRefreshToken"),
-						},
-					]);
-				}
-
-				const isValid = await authService.validateRefreshToken(
-					refreshToken,
-					(decoded as { id: string }).id,
-				);
-
-				if (!isValid) {
-					throw new UnprocessableEntityError(t("auth.invalidRefreshToken"), [
-						{
-							field: "refreshToken",
-							message: t("auth.refreshTokenRevoked"),
-						},
-					]);
-				}
-
-				const newAccessToken = await reply.jwtSign(
-					{ id: (decoded as { id: string }).id },
-					{ expiresIn: `${AppConfig.APP_JWT_EXPIRES_IN}s` },
-				);
-
-				const newRefreshToken = await reply.jwtSign(
-					{ id: (decoded as { id: string }).id, type: "refresh" },
-					{
-						expiresIn: `${AppConfig.APP_JWT_REFRESH_EXPIRES_IN}s`,
-						jti: StrToolkit.random(32),
-					},
-				);
-
-				await authService.storeRefreshToken(
-					(decoded as { id: string }).id,
-					newRefreshToken,
-				);
-
-				return ResponseToolkit.success<{
-					accessToken: string;
-					refreshToken: string;
-				}>(
-					reply,
-					{
-						accessToken: newAccessToken,
-						refreshToken: newRefreshToken,
-					},
-					t("auth.tokenRefreshed"),
-					200,
-				);
-			} catch (error) {
-				if (error instanceof UnprocessableEntityError) {
-					throw error;
-				}
-				throw new UnprocessableEntityError(t("auth.invalidRefreshToken"), [
-					{
-						field: "refreshToken",
-						message: t("auth.invalidRefreshToken"),
-					},
-				]);
-			}
+			const tokens = await fastify.di
+				.resolve(AuthService)
+				.refresh(fastify.jwt, request.body.refreshToken);
+			return ResponseToolkit.success(reply, tokens, t("auth.tokenRefreshed"));
 		},
 	);
 }

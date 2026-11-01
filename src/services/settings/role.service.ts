@@ -1,5 +1,10 @@
-import { db, permissionsTable, RoleRepository } from "@database";
-import { UnprocessableEntityError } from "@fastify-libs";
+import {
+	db,
+	PermissionRepository,
+	RoleRepository,
+	UserRepository,
+} from "@database";
+import { NotFoundError, UnprocessableEntityError } from "@fastify-libs";
 import { t } from "@i18n";
 import {
 	DatatableType,
@@ -7,12 +12,20 @@ import {
 	RoleDetail,
 	RoleList,
 } from "@types";
-import { inArray } from "drizzle-orm";
 import { injectable } from "tsyringe";
+
+import { SessionService } from "../session.service";
+
+type RoleInput = { name: string; permissionIds: string[] };
 
 @injectable()
 export class RoleService {
-	constructor(private _roleRepository: RoleRepository) {}
+	constructor(
+		private readonly _roleRepository: RoleRepository,
+		private readonly _permissionRepository: PermissionRepository,
+		private readonly _userRepository: UserRepository,
+		private readonly _sessionService: SessionService,
+	) {}
 
 	async findAll(
 		queryParam: DatatableType,
@@ -20,53 +33,70 @@ export class RoleService {
 		return await this._roleRepository.findAll(queryParam);
 	}
 
-	async create(data: {
-		name: string;
-		permissionIds?: string[];
-	}): Promise<void> {
-		if (!data.permissionIds) {
-			data.permissionIds = [];
+	async findOne(id: string): Promise<RoleDetail> {
+		const role = await this._roleRepository.getDetail(id);
+		if (!role) {
+			throw new NotFoundError(t("settings.roles.notFound"));
 		}
+		return role;
+	}
 
-		// validate the permissions ids
-		const validPermissions = await db
-			.select()
-			.from(permissionsTable)
-			.where(inArray(permissionsTable.id, data.permissionIds));
-
-		if (validPermissions.length !== data.permissionIds.length) {
-			throw new UnprocessableEntityError(t("auth.validationError"), [
-				{
-					field: "permissionIds",
-					message: t("settings.roles.invalidPermissions"),
-				},
-			]);
-		}
+	async create(data: RoleInput): Promise<void> {
+		await this.assertNameAvailable(data.name);
+		await this.assertPermissionsExist(data.permissionIds);
 
 		await db.transaction(async (tx) => {
-			await this._roleRepository.create(data, tx);
+			await this._roleRepository.create(this.dedupe(data), tx);
 		});
 	}
 
-	async detail(roleId: string): Promise<RoleDetail> {
-		return await this._roleRepository.getDetail(roleId);
+	async update(id: string, data: RoleInput): Promise<void> {
+		await this.assertExists(id);
+		await this.assertNameAvailable(data.name, id);
+		await this.assertPermissionsExist(data.permissionIds);
+
+		await db.transaction(async (tx) => {
+			await this._roleRepository.update(id, this.dedupe(data), tx);
+		});
+		await this._sessionService.forgetUsers(
+			await this._userRepository.findIdsByRole(id),
+		);
 	}
 
-	async update(
-		id: string,
-		data: { name: string; permissionIds?: string[] },
+	async delete(id: string): Promise<void> {
+		await this.assertExists(id);
+		const holders = await this._userRepository.findIdsByRole(id);
+		await this._roleRepository.delete(id);
+		await this._sessionService.forgetUsers(holders);
+	}
+
+	private dedupe(data: RoleInput): RoleInput {
+		return { name: data.name, permissionIds: [...new Set(data.permissionIds)] };
+	}
+
+	private async assertExists(id: string): Promise<void> {
+		const role = await this._roleRepository.findById(id);
+		if (!role) {
+			throw new NotFoundError(t("settings.roles.notFound"));
+		}
+	}
+
+	private async assertNameAvailable(
+		name: string,
+		excludeId?: string,
 	): Promise<void> {
-		if (!data.permissionIds) {
-			data.permissionIds = [];
+		const existing = await this._roleRepository.findByName(name, excludeId);
+		if (existing) {
+			throw new UnprocessableEntityError(t("auth.validationError"), [
+				{ field: "name", message: t("settings.roles.nameExists", { name }) },
+			]);
 		}
+	}
 
-		// validate the permissions ids
-		const validPermissions = await db
-			.select()
-			.from(permissionsTable)
-			.where(inArray(permissionsTable.id, data.permissionIds));
-
-		if (validPermissions.length !== data.permissionIds.length) {
+	private async assertPermissionsExist(permissionIds: string[]): Promise<void> {
+		const unique = [...new Set(permissionIds)];
+		const found = await this._permissionRepository.countExisting(unique);
+		if (found !== unique.length) {
 			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
 					field: "permissionIds",
@@ -74,15 +104,5 @@ export class RoleService {
 				},
 			]);
 		}
-
-		await db.transaction(async (tx) => {
-			await this._roleRepository.update(id, data, tx);
-		});
-	}
-
-	async delete(roleId: string): Promise<void> {
-		await db.transaction(async (tx) => {
-			await this._roleRepository.delete(roleId, tx);
-		});
 	}
 }

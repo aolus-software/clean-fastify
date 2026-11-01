@@ -49,9 +49,16 @@ function attachAcceptLanguage(openapiObject: OpenApiDocument): OpenApiDocument {
 	return openapiObject;
 }
 
+/**
+ * Serves the Scalar reference at /docs and the spec at /docs/openapi.json, only when
+ * ENABLE_API_DOCS is true. The flag defaults to false and is independent of NODE_ENV.
+ */
 export default fp(
 	async function (fastify) {
-		// Register Swagger first (without await)
+		if (!AppConfig.ENABLE_API_DOCS) {
+			return;
+		}
+
 		await fastify.register(fastifySwagger, {
 			openapi: {
 				info: {
@@ -94,7 +101,6 @@ export default fp(
 			},
 		});
 
-		// Register Scalar after Swagger
 		await fastify.register(ScalarApiReference, {
 			routePrefix: "/docs",
 			configuration: {
