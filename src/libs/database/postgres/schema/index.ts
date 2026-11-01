@@ -68,3 +68,4 @@ export type {
 	UserRole,
 } from "./rbac";
 export type { InsertUser, User, UserStatusEnum } from "./user";
+export { UserStatus, userStatusEnum } from "./user";

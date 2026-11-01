@@ -42,8 +42,13 @@ export class DateToolkit {
 			.startOf("day");
 	}
 
+	/** A string with an explicit offset keeps it; anything else is wall-clock time in APP_TIMEZONE. */
 	static parse(dateString: string): dayjs.Dayjs {
-		return dayjs(dateString).tz(DateToolkit._configuredTimezone);
+		const hasExplicitOffset = /(?:Z|[+-]\d{2}:?\d{2})$/.test(dateString.trim());
+
+		return hasExplicitOffset
+			? dayjs(dateString).tz(DateToolkit._configuredTimezone)
+			: dayjs.tz(dateString, DateToolkit._configuredTimezone);
 	}
 
 	static format(date: dayjs.Dayjs, formatString: string): string {

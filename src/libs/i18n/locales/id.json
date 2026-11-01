@@ -78,26 +78,36 @@
 	"settings.users.passwordChanged": "Kata sandi berhasil diubah",
 	"settings.users.emailExists": "Email sudah terdaftar",
 	"settings.users.invalidRoles": "Satu atau beberapa peran tidak valid",
-
 	"settings.roles.fetched": "Daftar peran berhasil diambil",
 	"settings.roles.created": "Peran berhasil dibuat",
 	"settings.roles.detailFetched": "Detail peran berhasil diambil",
 	"settings.roles.updated": "Peran berhasil diperbarui",
 	"settings.roles.deleted": "Peran berhasil dihapus",
 	"settings.roles.invalidPermissions": "Satu atau beberapa izin tidak valid",
-
 	"settings.permissions.fetched": "Daftar izin berhasil diambil",
 	"settings.permissions.created": "Izin berhasil dibuat",
 	"settings.permissions.detailFetched": "Detail izin berhasil diambil",
 	"settings.permissions.updated": "Izin berhasil diperbarui",
 	"settings.permissions.deleted": "Izin berhasil dihapus",
-
 	"settings.select.permissionsFetched": "Opsi pilihan izin berhasil diambil",
 	"settings.select.rolesFetched": "Opsi pilihan peran berhasil diambil",
+	"settings.users.notFound": "Pengguna tidak ditemukan",
+	"settings.users.verificationEmailSent": "Email verifikasi terkirim",
+	"settings.users.resetPasswordEmailSent": "Email atur ulang kata sandi terkirim",
+	"settings.roles.notFound": "Peran tidak ditemukan",
+	"settings.roles.nameExists": "Nama peran {{name}} sudah ada",
+	"settings.permissions.notFound": "Izin tidak ditemukan",
+	"settings.permissions.nameExists": "Izin sudah ada: {{name}}",
 
 	"health.allHealthy": "Semua layanan dalam kondisi sehat",
 	"health.someUnhealthy": "Satu atau beberapa layanan tidak sehat",
+	"health.alive": "Layanan aktif",
 
 	"mail.subject.verification": "Verifikasi Email",
-	"mail.subject.resetPassword": "Reset Kata Sandi"
+	"mail.subject.resetPassword": "Reset Kata Sandi",
+
+	"datatable.sortNotAllowed": "Pengurutan berdasarkan {{field}} tidak diizinkan. Yang diizinkan: {{allowed}}",
+	"datatable.filterNotAllowed": "Filter berdasarkan {{field}} tidak diizinkan. Yang diizinkan: {{allowed}}",
+	"datatable.filterValueNotAllowed": "Harus salah satu dari {{allowed}}. Diterima: {{received}}",
+	"datatable.filterDateInvalid": "Diharapkan tanggal ISO, atau dua tanggal dipisah koma sebagai awal,akhir"
 }

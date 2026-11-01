@@ -1,126 +1,79 @@
-import { ClickHouseClientManager, db } from "@database";
+import { db } from "@database";
 import { t } from "@i18n";
-import { ResponseToolkit } from "@utils";
+import {
+	createSuccessResponseSchema,
+	DateToolkit,
+	ResponseToolkit,
+	ServiceUnavailableResponseSchema,
+} from "@utils";
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 
-const ServiceStatusSchema = z.object({
-	status: z.enum(["healthy", "unhealthy"]),
-	responseTime: z.number(),
-	remarks: z.string().optional(),
-});
+const ServiceStateSchema = z.enum(["healthy", "unhealthy"]);
 
 export default function (fastify: FastifyInstance) {
-	fastify.withTypeProvider<ZodTypeProvider>();
+	const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-	fastify.get(
+	// ======================
+	// GET: /health
+	// ======================
+	app.get(
 		"",
 		{
 			schema: {
-				tags: ["Health"],
-				summary: "Health Check",
+				tags: ["General"],
+				summary: "Health check",
 				description:
-					"Checks the health status of the application and its dependencies.",
+					"Probes PostgreSQL and Redis. 503 when either probe fails.",
 				response: {
-					200: z.object({
-						status: z.number(),
-						success: z.boolean(),
-						message: z.string(),
-						data: z.object({
-							database: ServiceStatusSchema,
-							redis: ServiceStatusSchema,
-							clickhouse: ServiceStatusSchema,
+					200: createSuccessResponseSchema(
+						z.object({
+							status: z.literal("healthy"),
+							timestamp: z.string().describe("Current time in APP_TIMEZONE"),
+							services: z.object({
+								database: ServiceStateSchema,
+								redis: ServiceStateSchema,
+							}),
 						}),
-					}),
-					503: z.object({
-						status: z.number(),
-						success: z.boolean(),
-						message: z.string(),
-						data: z.object({
-							database: ServiceStatusSchema,
-							redis: ServiceStatusSchema,
-							clickhouse: ServiceStatusSchema,
-						}),
-					}),
+					),
+					503: ServiceUnavailableResponseSchema,
 				},
 			},
 		},
-		async (_request, reply) => {
-			const serviceStatus = {
-				database: {
-					status: "healthy",
-					responseTime: 0,
-					remarks: "PostgreSQL is operational",
-				},
-				redis: {
-					status: "healthy",
-					responseTime: 0,
-					remarks: "Redis cache is operational",
-				},
-				clickhouse: {
-					status: "healthy",
-					responseTime: 0,
-					remarks: "ClickHouse is operational",
-				},
-			};
+		async (request, reply) => {
+			const services: {
+				database: "healthy" | "unhealthy";
+				redis: "healthy" | "unhealthy";
+			} = { database: "healthy", redis: "healthy" };
 
 			try {
-				const start = Date.now();
 				await db.execute("SELECT 1");
-				const end = Date.now();
-				serviceStatus.database.responseTime = end - start;
 			} catch (error) {
-				serviceStatus.database = {
-					status: "unhealthy",
-					responseTime: 0,
-					remarks: error instanceof Error ? error.message : String(error),
-				};
+				request.log.error({ error }, "Health probe failed: database");
+				services.database = "unhealthy";
 			}
 
 			try {
-				const start = Date.now();
 				await fastify.redis.ping();
-				const end = Date.now();
-				serviceStatus.redis.responseTime = end - start;
 			} catch (error) {
-				serviceStatus.redis = {
-					status: "unhealthy",
-					responseTime: 0,
-					remarks: error instanceof Error ? error.message : String(error),
-				};
+				request.log.error({ error }, "Health probe failed: redis");
+				services.redis = "unhealthy";
 			}
 
-			try {
-				const clickhouse = ClickHouseClientManager.getInstance();
-				const start = Date.now();
-				await clickhouse.ping();
-				const end = Date.now();
-				serviceStatus.clickhouse.responseTime = end - start;
-			} catch (error) {
-				serviceStatus.clickhouse = {
-					status: "unhealthy",
-					responseTime: 0,
-					remarks: error instanceof Error ? error.message : String(error),
-				};
-			}
-
-			const allHealthy = Object.values(serviceStatus).every(
-				(service) => service.status === "healthy",
-			);
-
-			if (!allHealthy) {
-				return ResponseToolkit.error(
-					reply,
-					t("health.someUnhealthy"),
-					503,
-					serviceStatus,
-				);
+			if (services.database !== "healthy" || services.redis !== "healthy") {
+				return ResponseToolkit.error(reply, t("health.someUnhealthy"), 503);
 			}
 
 			return ResponseToolkit.success(
 				reply,
-				serviceStatus,
+				{
+					status: "healthy" as const,
+					timestamp: DateToolkit.getDateTimeInformativeWithTimezone(
+						DateToolkit.now(),
+					),
+					services,
+				},
 				t("health.allHealthy"),
 			);
 		},

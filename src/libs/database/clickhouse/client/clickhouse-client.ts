@@ -1,4 +1,5 @@
 import { ClickHouseClient, createClient } from "@clickhouse/client";
+import { clickhouseConfig } from "@config";
 
 export class ClickHouseClientManager {
 	private static instance: ClickHouseClient | null = null;
@@ -8,10 +9,10 @@ export class ClickHouseClientManager {
 	static getInstance(): ClickHouseClient {
 		if (!this.instance) {
 			this.instance = createClient({
-				host: process.env.CLICKHOUSE_HOST || "http://localhost:8123",
-				username: process.env.CLICKHOUSE_USER || "default",
-				password: process.env.CLICKHOUSE_PASSWORD || "",
-				database: process.env.CLICKHOUSE_DATABASE || "default",
+				host: clickhouseConfig.host,
+				username: clickhouseConfig.user,
+				password: clickhouseConfig.password,
+				database: clickhouseConfig.database,
 				compression: {
 					request: true,
 					response: true,

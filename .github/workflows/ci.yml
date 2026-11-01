@@ -26,7 +26,7 @@ jobs:
         run: bun run lint
 
       - name: Check formatting
-        run: bun run prettier --check .
+        run: bun run format:check
 
   type-check:
     name: Type Check

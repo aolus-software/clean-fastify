@@ -46,6 +46,16 @@ class Cache {
 		}
 	}
 
+	static async deleteMany(keys: string[]): Promise<void> {
+		if (keys.length === 0) return;
+		try {
+			const client = this.getRedisClient();
+			await client.del(...keys);
+		} catch (error) {
+			logger.error(error, "Error deleting cache keys");
+		}
+	}
+
 	static async flush(): Promise<void> {
 		try {
 			const client = this.getRedisClient();

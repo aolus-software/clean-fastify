@@ -1,59 +1,56 @@
-import { UserRepository, usersTable } from "@database";
+import { UserRepository } from "@database";
 import { UnauthorizedError, UnprocessableEntityError } from "@fastify-libs";
 import { t } from "@i18n";
 import { UserInformation } from "@types";
 import { Hash } from "@utils";
-import { and, eq, isNull } from "drizzle-orm";
 import { injectable } from "tsyringe";
+
+import { SessionService } from "./session.service";
 
 @injectable()
 export class ProfileService {
-	constructor(private readonly _userRepository: UserRepository) {}
+	constructor(
+		private readonly _userRepository: UserRepository,
+		private readonly _sessionService: SessionService,
+	) {}
 
 	async updateProfile(
 		userId: string,
 		data: { name: string; email: string },
 	): Promise<UserInformation> {
-		const user = await this._userRepository.db.query.users.findFirst({
-			where: and(eq(usersTable.id, userId), isNull(usersTable.deleted_at)),
-		});
-
-		if (!user) {
-			throw new UnauthorizedError(t("auth.userNotFound"));
+		const existing = await this._userRepository.findLiveByEmail(
+			data.email,
+			userId,
+		);
+		if (existing) {
+			throw new UnprocessableEntityError(t("auth.validationError"), [
+				{ field: "email", message: t("settings.users.emailExists") },
+			]);
 		}
 
-		await this._userRepository.db
-			.update(usersTable)
-			.set({
-				name: data.name,
-				email: data.email,
-				updated_at: new Date(),
-			})
-			.where(eq(usersTable.id, userId));
+		await this._userRepository.updateProfile(userId, data);
+		await this._sessionService.forgetUsers([userId]);
 
-		return await this._userRepository.UserInformation(userId);
+		const information = await this._sessionService.getUserInformation(userId);
+		if (!information) {
+			throw new UnauthorizedError(t("auth.userNotFound"));
+		}
+		return information;
 	}
 
 	async updatePassword(
 		userId: string,
-		data: {
-			password: string;
-			currentPassword: string;
-		},
+		data: { currentPassword: string; newPassword: string },
 	): Promise<void> {
-		const user = await this._userRepository.db.query.users.findFirst({
-			where: and(eq(usersTable.id, userId), isNull(usersTable.deleted_at)),
-		});
-
-		if (!user) {
+		const currentHash = await this._userRepository.findPasswordHash(userId);
+		if (!currentHash) {
 			throw new UnauthorizedError(t("auth.userNotFound"));
 		}
 
 		const isPasswordValid = await Hash.compareHash(
 			data.currentPassword,
-			user.password,
+			currentHash,
 		);
-
 		if (!isPasswordValid) {
 			throw new UnprocessableEntityError(t("auth.validationError"), [
 				{
@@ -63,13 +60,10 @@ export class ProfileService {
 			]);
 		}
 
-		const hashedPassword = await Hash.generateHash(data.password);
-		await this._userRepository.db
-			.update(usersTable)
-			.set({
-				password: hashedPassword,
-				updated_at: new Date(),
-			})
-			.where(eq(usersTable.id, userId));
+		await this._userRepository.updatePassword(
+			userId,
+			await Hash.generateHash(data.newPassword),
+		);
+		await this._sessionService.revokeSessions(userId);
 	}
 }

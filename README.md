@@ -40,27 +40,26 @@ cp .env.example .env
 
 Edit `.env` with your configuration:
 
+`.env.example` is copyable as-is for local development except for the two required secrets: their
+placeholder values are rejected at startup, so the API and the worker refuse to boot until you
+replace them. Generate each with `openssl rand -base64 48` (at least 32 characters, and the two must
+differ):
+
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/your_database"
-REDIS_HOST="localhost"
-REDIS_PORT=6379
-APP_SECRET="your-secret-key"
-APP_JWT_SECRET="your-jwt-secret"
+JWT_SECRET=change-me-before-running
+JWT_REFRESH_SECRET=change-me-too-before-running
 ```
+
+Every variable is described in [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 ### Database Setup
 
 ```bash
-# Generate migration files
-make db-generate
+# Start PostgreSQL and Redis (and ClickHouse) locally
+docker compose up -d postgres redis
 
-# Run migrations
+# Apply migrations, then seed
 make db-migrate
-
-# Or push schema directly (development only)
-make db-push
-
-# Run seeders
 make db-seed
 ```
 
@@ -79,7 +78,9 @@ make dev-server
 make dev-worker
 ```
 
-The API will be available at `http://localhost:8001`
+The API will be available at `http://localhost:3000`.
+
+Seeded accounts: `superuser@example.com` and `admin@example.com`, password `S3crEtP4ssw0rd!`.
 
 ## Project Structure
 
@@ -98,9 +99,12 @@ src/
 │   │   ├── clickhouse/ # ClickHouse setup
 │   │   └── seed/       # Database seeders
 │   ├── fastify/        # Fastify plugins and utilities
-│   │   ├── plugins/    # Custom plugins
-│   │   ├── error/      # Error handlers
-│   │   └── di/         # Dependency injection
+│   │   ├── default/    # Shared constants (password rule, sort, token lifetimes)
+│   │   ├── di/         # Dependency injection (tsyringe)
+│   │   ├── error/      # Error classes
+│   │   ├── guards/     # PermissionGuard / RoleGuard
+│   │   └── plugins/    # externals/ and app/ plugins (registered in app.ts)
+│   ├── i18n/           # Translations (en, id)
 │   ├── mail/           # Email service
 │   ├── types/          # TypeScript types
 │   └── utils/          # Utility functions
@@ -124,7 +128,7 @@ make dev-worker     # Start worker only with hot reload
 ### Production Build
 
 ```bash
-make build          # Build the application
+make build          # Typecheck and build dist/serve.js + dist/worker.js
 make start          # Start server and worker
 make start-server   # Start production server only
 make start-worker   # Start production worker only
@@ -134,8 +138,9 @@ make start-worker   # Start production worker only
 
 ```bash
 make lint           # Run ESLint
+make lint-fix       # Fix ESLint issues
 make format         # Format code with Prettier
-bun run typecheck   # Run TypeScript type checking
+make typecheck      # Run TypeScript type checking
 ```
 
 ### Database (PostgreSQL)
@@ -146,8 +151,8 @@ make db-migrate     # Run pending migrations
 make db-push        # Push schema to database (dev only)
 make db-pull        # Pull schema from database
 make db-studio      # Open Drizzle Studio UI
-make db-drop        # Drop all tables (dangerous!)
-make db-seed        # Run database seeders
+make db-drop        # Drop every table and the migration journal (dangerous!)
+make db-seed        # Seed permissions, roles and users (idempotent)
 ```
 
 ### Database (ClickHouse)
@@ -160,61 +165,79 @@ make db-clickhouse-status         # Check migration status
 ### Quick Workflows
 
 ```bash
-make fresh          # Drop, push schema, and seed
+make fresh          # Drop, migrate, and seed (dev only, destructive)
 make reset          # Generate, migrate, and seed
 ```
 
+### Docker
+
+```bash
+make docker-build   # Build compose images (app, worker) and the migrator image
+make docker-up      # Start the full stack
+make docker-down    # Stop the stack
+make docker-restart # Restart app and worker
+make docker-logs    # Tail app and worker logs
+make docker-ps      # Show stack status
+make docker-migrate # Run migrations inside the compose network
+make docker-seed    # Seed inside the compose network
+make docker-deploy  # git pull + up --build + migrate
+```
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## API Documentation
 
-Once the server is running, visit:
+With `ENABLE_API_DOCS=true` (it defaults to `false`):
 
-- Swagger UI: `http://localhost:8001/documentation`
-- Scalar API Reference: `http://localhost:8001/reference`
+- Scalar API reference: `http://localhost:3000/docs`
+- OpenAPI JSON: `http://localhost:3000/docs/openapi.json`
+
+The contract (envelope, routes, guards, list query parameters) is in
+[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md).
 
 ## Authentication
 
 The application uses JWT-based authentication:
 
-1. Register: `POST /auth/register`
-2. Login: `POST /auth/login`
-3. Use returned token in Authorization header: `Bearer <token>`
+1. Register: `POST /auth/register`, then verify the email: `POST /auth/verify-email`
+2. Login: `POST /auth/login` returns `{ user, accessToken, refreshToken }`
+3. Send `Authorization: Bearer <accessToken>` (valid 1 day)
+4. Refresh: `POST /auth/refresh` with `{ refreshToken }` returns a new pair (refresh tokens last 7 days
+   and rotate on every use)
+
+Settings routes are guarded by `<group> <action>` permissions (`user list`, `role edit`, ...); the
+`superuser` role bypasses every guard.
 
 ## Environment Variables
 
-| Variable         | Description                  | Default     |
-| ---------------- | ---------------------------- | ----------- |
-| `APP_PORT`       | Server port                  | 8001        |
-| `APP_HOST`       | Server host                  | localhost   |
-| `APP_ENV`        | Environment                  | development |
-| `DATABASE_URL`   | PostgreSQL connection string | -           |
-| `REDIS_HOST`     | Redis host                   | localhost   |
-| `REDIS_PORT`     | Redis port                   | 6379        |
-| `APP_JWT_SECRET` | JWT signing secret           | -           |
-| `APP_SECRET`     | Application secret key       | -           |
+The full list lives in [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and `.env.example`. The ones you
+must set:
+
+| Variable             | Description                            | Default     |
+| -------------------- | -------------------------------------- | ----------- |
+| `JWT_SECRET`         | Signs access tokens                    | required    |
+| `JWT_REFRESH_SECRET` | Signs refresh tokens                   | required    |
+| `DATABASE_URL`       | PostgreSQL connection string           | placeholder |
+| `APP_PORT`           | Server port                            | 3000        |
+| `NODE_ENV`           | `development`, `staging`, `production` | development |
+| `ENABLE_API_DOCS`    | Serve `/docs`                          | false       |
 
 ## Testing
 
-Run the test suite:
-
-```bash
-bun test
-```
+No test runner is configured yet.
 
 ## CI/CD
 
 The project includes GitHub Actions workflow for:
 
-- Linting
+- Linting and format check
+- Type checking
+- Migration drift check and applying migrations against a throwaway PostgreSQL
 - Building server and worker
-- Running database migrations
-- Running seeders
 
 ## Contributing
 
-1. Follow the existing code structure
-2. Use TypeScript strict mode
-3. Write meaningful commit messages
-4. Ensure all tests pass before submitting PR
+See [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## License
 

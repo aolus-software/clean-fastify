@@ -1,299 +1,258 @@
-import { db, role_permissionsTable, rolesTable } from "@database";
 import {
-	defaultSort,
-	NotFoundError,
-	UnprocessableEntityError,
-} from "@fastify-libs";
+	db,
+	permissionsTable,
+	role_permissionsTable,
+	rolesTable,
+} from "@database";
+import { injectable } from "@fastify-libs";
 import {
 	DatatableType,
+	FilterField,
 	PaginationResponse,
 	RoleDetail,
 	RoleList,
-	SortDirection,
 } from "@types";
 import { DatatableToolkit } from "@utils";
-import { and, asc, desc, eq, ilike, ne, not, or, SQL } from "drizzle-orm";
-import { injectable } from "tsyringe";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	lte,
+	ne,
+	SQL,
+} from "drizzle-orm";
 
 import { DbTransaction } from ".";
+
+const roleOrderableColumns = {
+	id: rolesTable.id,
+	name: rolesTable.name,
+	createdAt: rolesTable.created_at,
+	updatedAt: rolesTable.updated_at,
+};
+
+export const roleSortableFields = Object.keys(roleOrderableColumns);
+export const roleSearchColumns = ["name"];
+export const roleFilterableFields: FilterField[] = [
+	"name",
+	{ field: "createdAt", kind: "date" },
+	{ field: "updatedAt", kind: "date" },
+];
+export const roleFilterExample: Record<string, string> = {
+	name: "admin",
+	createdAt: "2024-01-01,2024-12-31",
+	updatedAt: "2024-01-01,2024-12-31",
+};
+
 @injectable()
 export class RoleRepository {
 	private dbInstance = db;
-
-	get db() {
-		return this.dbInstance;
-	}
-
-	getDb(tx?: DbTransaction) {
-		return tx || this.dbInstance.$cache;
-	}
 
 	async findAll(
 		queryParam: DatatableType,
 		tx?: DbTransaction,
 	): Promise<PaginationResponse<RoleList>> {
 		const database = tx || this.dbInstance;
-		const page: number = queryParam.page || 1;
-		const limit: number = queryParam.limit || 10;
-		const search: string | null = queryParam.search || null;
-		const orderBy: string = queryParam.sort ? queryParam.sort : defaultSort;
-		const orderDirection: SortDirection = queryParam.sortDirection
-			? queryParam.sortDirection
-			: "desc";
-		const filter: Record<string, boolean | string | Date> | null =
-			queryParam.filter || null;
+		const { page, perPage: limit, search, filter } = queryParam;
 		const offset = (page - 1) * limit;
-		let whereCondition: SQL | undefined;
+
+		DatatableToolkit.assertFilter(filter, roleFilterableFields);
+		const orderColumn = DatatableToolkit.parseSort(
+			roleOrderableColumns,
+			queryParam.sort,
+		);
+
+		const clauses: (SQL | undefined)[] = [];
 		if (search) {
-			whereCondition = or(ilike(rolesTable.name, `%${search}%`));
+			clauses.push(ilike(rolesTable.name, `%${search}%`));
 		}
-		let filteredCondition: SQL | undefined = undefined;
 		if (filter) {
-			if (filter.name) {
-				filteredCondition = and(
-					whereCondition,
-					ilike(rolesTable.name, `%${filter.name.toString()}%`),
+			if (filter.name !== undefined) {
+				clauses.push(ilike(rolesTable.name, `%${filter.name.toString()}%`));
+			}
+			if (filter.createdAt !== undefined) {
+				const { from, to } = DatatableToolkit.filterDateRange(
+					filter.createdAt,
+					"createdAt",
+				);
+				clauses.push(
+					gte(rolesTable.created_at, from),
+					lte(rolesTable.created_at, to),
+				);
+			}
+			if (filter.updatedAt !== undefined) {
+				const { from, to } = DatatableToolkit.filterDateRange(
+					filter.updatedAt,
+					"updatedAt",
+				);
+				clauses.push(
+					gte(rolesTable.updated_at, from),
+					lte(rolesTable.updated_at, to),
 				);
 			}
 		}
-		const finalWhereCondition: SQL | undefined = and(
-			whereCondition,
-			filteredCondition,
-		);
-		const orderColumn = DatatableToolkit.parseSort(
-			{
-				id: rolesTable.id,
-				name: rolesTable.name,
-				created_at: rolesTable.created_at,
-				updated_at: rolesTable.updated_at,
-			},
-			orderBy,
-		);
-		const roles = await database.query.roles.findMany({
-			where: finalWhereCondition,
-			orderBy: orderDirection === "asc" ? asc(orderColumn) : desc(orderColumn),
-			columns: {
-				id: true,
-				name: true,
-				created_at: true,
-				updated_at: true,
-			},
-			limit,
-			offset,
-		});
-		const totalCount = await database.$count(rolesTable, finalWhereCondition);
+
+		const where = and(...clauses);
+
+		const [rows, totalCount] = await Promise.all([
+			database.query.roles.findMany({
+				where,
+				orderBy:
+					queryParam.sortDirection === "asc"
+						? asc(orderColumn)
+						: desc(orderColumn),
+				limit,
+				offset,
+			}),
+			database.$count(rolesTable, where),
+		]);
+
 		return {
-			data: roles.map((role) => ({
+			data: rows.map((role) => ({
 				id: role.id,
 				name: role.name,
-				created_at: role.created_at,
-				updated_at: role.updated_at,
+				createdAt: role.created_at,
+				updatedAt: role.updated_at,
 			})),
-			meta: {
-				page,
-				limit,
-				totalCount,
-			},
+			meta: { page, limit, totalCount },
 		};
 	}
 
+	async findById(
+		id: string,
+		tx?: DbTransaction,
+	): Promise<{ id: string; name: string } | null> {
+		const database = tx || this.dbInstance;
+		const role = await database.query.roles.findFirst({
+			where: eq(rolesTable.id, id),
+			columns: { id: true, name: true },
+		});
+		return role ?? null;
+	}
+
+	async findByName(
+		name: string,
+		excludeId?: string,
+		tx?: DbTransaction,
+	): Promise<{ id: string } | null> {
+		const database = tx || this.dbInstance;
+		const role = await database.query.roles.findFirst({
+			where: and(
+				eq(rolesTable.name, name),
+				excludeId ? ne(rolesTable.id, excludeId) : undefined,
+			),
+			columns: { id: true },
+		});
+		return role ?? null;
+	}
+
+	async countExisting(ids: string[], tx?: DbTransaction): Promise<number> {
+		if (ids.length === 0) return 0;
+		const database = tx || this.dbInstance;
+		return await database.$count(rolesTable, inArray(rolesTable.id, ids));
+	}
+
 	async create(
-		data: {
-			name: string;
-			permissionIds?: string[];
-		},
+		data: { name: string; permissionIds: string[] },
 		tx?: DbTransaction,
 	): Promise<void> {
 		const database = tx || this.dbInstance;
-
-		const isNameExists = await database.query.roles.findFirst({
-			where: eq(rolesTable.name, data.name),
-		});
-
-		if (isNameExists) {
-			throw new UnprocessableEntityError("Role name already exists", [
-				{
-					field: "name",
-					message: `The role name for ${data.name} already exists`,
-				},
-			]);
-		}
-
-		const role = await database
+		const [role] = await database
 			.insert(rolesTable)
-			.values({
-				name: data.name,
-			})
-			.returning({ id: rolesTable.id })
-			.execute();
+			.values({ name: data.name })
+			.returning({ id: rolesTable.id });
 
-		if (data.permissionIds && data.permissionIds.length > 0) {
-			const rolePermissions = data.permissionIds.map((permissionId) => ({
-				roleId: role[0].id,
-				permissionId,
-			}));
-
-			await database.insert(role_permissionsTable).values(rolePermissions);
+		if (data.permissionIds.length > 0) {
+			await database.insert(role_permissionsTable).values(
+				data.permissionIds.map((permissionId) => ({
+					roleId: role.id,
+					permissionId,
+				})),
+			);
 		}
 	}
 
-	async getDetail(id: string, tx?: DbTransaction): Promise<RoleDetail> {
+	async getDetail(id: string, tx?: DbTransaction): Promise<RoleDetail | null> {
 		const database = tx || this.dbInstance;
-
 		const role = await database.query.roles.findFirst({
 			where: eq(rolesTable.id, id),
-			columns: {
-				id: true,
-				name: true,
-				created_at: true,
-				updated_at: true,
-			},
-
-			with: {
-				role_permissions: {
-					with: {
-						permission: {
-							columns: {
-								id: true,
-								name: true,
-								group: true,
-							},
-						},
-					},
-				},
-			},
+			with: { role_permissions: { columns: { permissionId: true } } },
 		});
 
-		if (!role) {
-			throw new NotFoundError("Role not found");
-		}
+		if (!role) return null;
 
+		const assigned = new Set(
+			role.role_permissions.map(
+				(rolePermission) => rolePermission.permissionId,
+			),
+		);
 		const allPermissions = await database.query.permissions.findMany({
-			columns: {
-				id: true,
-				name: true,
-				group: true,
-			},
+			columns: { id: true, name: true, group: true },
+			orderBy: [asc(permissionsTable.group), asc(permissionsTable.name)],
 		});
+
+		const groups = new Map<string, RoleDetail["permissions"][number]>();
+		for (const permission of allPermissions) {
+			const group = groups.get(permission.group) ?? {
+				group: permission.group,
+				names: [],
+			};
+			group.names.push({
+				id: permission.id,
+				name: permission.name,
+				isAssigned: assigned.has(permission.id),
+			});
+			groups.set(permission.group, group);
+		}
 
 		return {
 			id: role.id,
 			name: role.name,
-			created_at: role.created_at,
-			updated_at: role.updated_at,
-			permissions: allPermissions.reduce(
-				(
-					acc: {
-						group: string;
-						names: { id: string; name: string; is_assigned: boolean }[];
-					}[],
-					permission,
-				) => {
-					const isAssigned = role.role_permissions.some(
-						(rp) => rp.permission.id === permission.id,
-					);
-
-					const group = permission.group || "Ungrouped";
-					const nameEntry = {
-						id: permission.id,
-						name: permission.name,
-						is_assigned: isAssigned,
-					};
-
-					const existingGroup = acc.find((g) => g.group === group);
-					if (existingGroup) {
-						existingGroup.names.push(nameEntry);
-					} else {
-						acc.push({ group, names: [nameEntry] });
-					}
-
-					return acc;
-				},
-				[],
-			),
+			createdAt: role.created_at,
+			updatedAt: role.updated_at,
+			permissions: [...groups.values()],
 		};
 	}
 
 	async update(
 		id: string,
-		data: { name: string; permissionIds?: string[] },
+		data: { name: string; permissionIds: string[] },
 		tx?: DbTransaction,
 	): Promise<void> {
 		const database = tx || this.dbInstance;
-
-		const role = await database.query.roles.findFirst({
-			where: eq(rolesTable.id, id),
-		});
-
-		if (!role) {
-			throw new NotFoundError("Role not found");
-		}
-
-		const isNameExists = await database.query.roles.findFirst({
-			where: and(eq(rolesTable.name, data.name), not(eq(rolesTable.id, id))),
-		});
-
-		if (isNameExists) {
-			throw new UnprocessableEntityError("Role name already exists", [
-				{
-					field: "name",
-					message: `The role name for ${data.name} already exists`,
-				},
-			]);
-		}
-
 		await database
 			.update(rolesTable)
-			.set({
-				name: data.name,
-			})
-			.where(eq(rolesTable.id, id))
-			.execute();
+			.set({ name: data.name })
+			.where(eq(rolesTable.id, id));
 
 		await database
 			.delete(role_permissionsTable)
-			.where(eq(role_permissionsTable.roleId, id))
-			.execute();
+			.where(eq(role_permissionsTable.roleId, id));
 
-		if (data.permissionIds && data.permissionIds.length > 0) {
-			const rolePermissions = data.permissionIds.map((permissionId) => ({
-				roleId: id,
-				permissionId,
-			}));
-
-			await database.insert(role_permissionsTable).values(rolePermissions);
+		if (data.permissionIds.length > 0) {
+			await database.insert(role_permissionsTable).values(
+				data.permissionIds.map((permissionId) => ({
+					roleId: id,
+					permissionId,
+				})),
+			);
 		}
 	}
 
 	async delete(id: string, tx?: DbTransaction): Promise<void> {
 		const database = tx || this.dbInstance;
-
-		const role = await database.query.roles.findFirst({
-			where: eq(rolesTable.id, id),
-		});
-
-		if (!role) {
-			throw new NotFoundError("Role not found");
-		}
-
-		await database
-			.delete(role_permissionsTable)
-			.where(eq(role_permissionsTable.roleId, id))
-			.execute();
-
-		await database.delete(rolesTable).where(eq(rolesTable.id, id)).execute();
+		await database.delete(rolesTable).where(eq(rolesTable.id, id));
 	}
 
 	async selectOptions(): Promise<{ id: string; name: string }[]> {
-		const roles = await this.dbInstance.query.roles.findMany({
+		return await this.dbInstance.query.roles.findMany({
 			where: ne(rolesTable.name, "superuser"),
-			columns: {
-				id: true,
-				name: true,
-			},
+			columns: { id: true, name: true },
 			orderBy: asc(rolesTable.name),
 		});
-
-		return roles;
 	}
 }

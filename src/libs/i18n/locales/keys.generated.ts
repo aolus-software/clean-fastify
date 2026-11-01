@@ -35,6 +35,10 @@ export type TranslationKey =
 	| "common.retrieved"
 	| "common.success"
 	| "common.updated"
+	| "datatable.filterDateInvalid"
+	| "datatable.filterNotAllowed"
+	| "datatable.filterValueNotAllowed"
+	| "datatable.sortNotAllowed"
 	| "errors.badRequest"
 	| "errors.conflict"
 	| "errors.forbidden"
@@ -48,6 +52,7 @@ export type TranslationKey =
 	| "errors.unauthorized"
 	| "errors.unprocessableEntity"
 	| "errors.unsupportedMediaType"
+	| "health.alive"
 	| "health.allHealthy"
 	| "health.someUnhealthy"
 	| "mail.subject.resetPassword"
@@ -60,12 +65,16 @@ export type TranslationKey =
 	| "settings.permissions.deleted"
 	| "settings.permissions.detailFetched"
 	| "settings.permissions.fetched"
+	| "settings.permissions.nameExists"
+	| "settings.permissions.notFound"
 	| "settings.permissions.updated"
 	| "settings.roles.created"
 	| "settings.roles.deleted"
 	| "settings.roles.detailFetched"
 	| "settings.roles.fetched"
 	| "settings.roles.invalidPermissions"
+	| "settings.roles.nameExists"
+	| "settings.roles.notFound"
 	| "settings.roles.updated"
 	| "settings.select.permissionsFetched"
 	| "settings.select.rolesFetched"
@@ -75,8 +84,11 @@ export type TranslationKey =
 	| "settings.users.emailExists"
 	| "settings.users.fetched"
 	| "settings.users.invalidRoles"
+	| "settings.users.notFound"
 	| "settings.users.passwordChanged"
+	| "settings.users.resetPasswordEmailSent"
 	| "settings.users.updated"
+	| "settings.users.verificationEmailSent"
 	| "validation.expectedArray"
 	| "validation.expectedBoolean"
 	| "validation.expectedDateTime"
@@ -129,6 +141,10 @@ export const TRANSLATION_KEYS: ReadonlySet<TranslationKey> =
 		"common.retrieved",
 		"common.success",
 		"common.updated",
+		"datatable.filterDateInvalid",
+		"datatable.filterNotAllowed",
+		"datatable.filterValueNotAllowed",
+		"datatable.sortNotAllowed",
 		"errors.badRequest",
 		"errors.conflict",
 		"errors.forbidden",
@@ -142,6 +158,7 @@ export const TRANSLATION_KEYS: ReadonlySet<TranslationKey> =
 		"errors.unauthorized",
 		"errors.unprocessableEntity",
 		"errors.unsupportedMediaType",
+		"health.alive",
 		"health.allHealthy",
 		"health.someUnhealthy",
 		"mail.subject.resetPassword",
@@ -154,12 +171,16 @@ export const TRANSLATION_KEYS: ReadonlySet<TranslationKey> =
 		"settings.permissions.deleted",
 		"settings.permissions.detailFetched",
 		"settings.permissions.fetched",
+		"settings.permissions.nameExists",
+		"settings.permissions.notFound",
 		"settings.permissions.updated",
 		"settings.roles.created",
 		"settings.roles.deleted",
 		"settings.roles.detailFetched",
 		"settings.roles.fetched",
 		"settings.roles.invalidPermissions",
+		"settings.roles.nameExists",
+		"settings.roles.notFound",
 		"settings.roles.updated",
 		"settings.select.permissionsFetched",
 		"settings.select.rolesFetched",
@@ -169,8 +190,11 @@ export const TRANSLATION_KEYS: ReadonlySet<TranslationKey> =
 		"settings.users.emailExists",
 		"settings.users.fetched",
 		"settings.users.invalidRoles",
+		"settings.users.notFound",
 		"settings.users.passwordChanged",
+		"settings.users.resetPasswordEmailSent",
 		"settings.users.updated",
+		"settings.users.verificationEmailSent",
 		"validation.expectedArray",
 		"validation.expectedBoolean",
 		"validation.expectedDateTime",

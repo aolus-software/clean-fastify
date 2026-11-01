@@ -1,193 +1,198 @@
 import { db, permissionsTable } from "@database";
-import {
-	defaultSort,
-	NotFoundError,
-	UnprocessableEntityError,
-} from "@fastify-libs";
+import { injectable } from "@fastify-libs";
 import {
 	DatatableType,
+	FilterField,
 	PaginationResponse,
 	PermissionList,
 	PermissionSelectOptions,
-	SortDirection,
 } from "@types";
-import { and, asc, desc, eq, ilike, not, or, SQL } from "drizzle-orm";
-import { injectable } from "tsyringe";
+import { DatatableToolkit } from "@utils";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	gte,
+	ilike,
+	inArray,
+	lte,
+	ne,
+	or,
+	SQL,
+} from "drizzle-orm";
 
 import { DbTransaction } from ".";
+
+const permissionOrderableColumns = {
+	id: permissionsTable.id,
+	name: permissionsTable.name,
+	group: permissionsTable.group,
+	createdAt: permissionsTable.created_at,
+	updatedAt: permissionsTable.updated_at,
+};
+
+export const permissionSortableFields = Object.keys(permissionOrderableColumns);
+export const permissionSearchColumns = ["name", "group"];
+export const permissionFilterableFields: FilterField[] = [
+	"name",
+	"group",
+	{ field: "createdAt", kind: "date" },
+	{ field: "updatedAt", kind: "date" },
+];
+export const permissionFilterExample: Record<string, string> = {
+	name: "user list",
+	group: "user",
+	createdAt: "2024-01-01,2024-12-31",
+	updatedAt: "2024-01-01,2024-12-31",
+};
+
+const toPermissionList = (
+	row: typeof permissionsTable.$inferSelect,
+): PermissionList => ({
+	id: row.id,
+	name: row.name,
+	group: row.group,
+	createdAt: row.created_at,
+	updatedAt: row.updated_at,
+});
 
 @injectable()
 export class PermissionRepository {
 	private dbInstance = db;
-
-	get db() {
-		return this.dbInstance;
-	}
-
-	getDb(tx?: DbTransaction) {
-		return tx || this.dbInstance.$cache;
-	}
 
 	async findAll(
 		queryParam: DatatableType,
 		tx?: DbTransaction,
 	): Promise<PaginationResponse<PermissionList>> {
 		const database = tx || this.dbInstance;
-
-		const page: number = queryParam.page || 1;
-		const limit: number = queryParam.limit || 10;
-		const search: string | null = queryParam.search || null;
-		const orderBy: string = queryParam.sort ? queryParam.sort : defaultSort;
-		const orderDirection: SortDirection = queryParam.sortDirection
-			? queryParam.sortDirection
-			: "desc";
-		const filter: Record<string, boolean | string | Date> | null =
-			queryParam.filter || null;
+		const { page, perPage: limit, search, filter } = queryParam;
 		const offset = (page - 1) * limit;
 
-		let whereCondition: SQL | undefined;
+		DatatableToolkit.assertFilter(filter, permissionFilterableFields);
+		const orderColumn = DatatableToolkit.parseSort(
+			permissionOrderableColumns,
+			queryParam.sort,
+		);
 
+		const clauses: (SQL | undefined)[] = [];
 		if (search) {
-			whereCondition = or(
-				ilike(permissionsTable.name, `%${search}%`),
-				ilike(permissionsTable.group, `%${search}%`),
+			clauses.push(
+				or(
+					ilike(permissionsTable.name, `%${search}%`),
+					ilike(permissionsTable.group, `%${search}%`),
+				),
 			);
 		}
-
-		let filteredCondition: SQL | undefined = undefined;
 		if (filter) {
-			if (filter.name) {
-				filteredCondition = and(
-					whereCondition,
+			if (filter.name !== undefined) {
+				clauses.push(
 					ilike(permissionsTable.name, `%${filter.name.toString()}%`),
 				);
 			}
-
-			if (filter.group) {
-				filteredCondition = and(
-					whereCondition,
+			if (filter.group !== undefined) {
+				clauses.push(
 					ilike(permissionsTable.group, `%${filter.group.toString()}%`),
+				);
+			}
+			if (filter.createdAt !== undefined) {
+				const { from, to } = DatatableToolkit.filterDateRange(
+					filter.createdAt,
+					"createdAt",
+				);
+				clauses.push(
+					gte(permissionsTable.created_at, from),
+					lte(permissionsTable.created_at, to),
+				);
+			}
+			if (filter.updatedAt !== undefined) {
+				const { from, to } = DatatableToolkit.filterDateRange(
+					filter.updatedAt,
+					"updatedAt",
+				);
+				clauses.push(
+					gte(permissionsTable.updated_at, from),
+					lte(permissionsTable.updated_at, to),
 				);
 			}
 		}
 
-		const finalWhereCondition: SQL | undefined = and(
-			whereCondition,
-			filteredCondition ? filteredCondition : undefined,
-		);
+		const where = and(...clauses);
 
-		const validateOrderBy = {
-			id: permissionsTable.id,
-			name: permissionsTable.name,
-			group: permissionsTable.group,
-			created_at: permissionsTable.created_at,
-			updated_at: permissionsTable.updated_at,
-		};
-
-		type OrderableKey = keyof typeof validateOrderBy;
-		const normalizedOrderBy: OrderableKey = (
-			Object.keys(validateOrderBy) as OrderableKey[]
-		).includes(orderBy as OrderableKey)
-			? (orderBy as OrderableKey)
-			: "id";
-
-		const orderColumn = validateOrderBy[normalizedOrderBy];
-
-		const rawData = await database.query.permissions.findMany({
-			where: finalWhereCondition,
-			orderBy: orderDirection === "asc" ? asc(orderColumn) : desc(orderColumn),
-			columns: {
-				id: true,
-				name: true,
-				group: true,
-				created_at: true,
-				updated_at: true,
-			},
-			limit,
-			offset,
-		});
-
-		const data: PermissionList[] = rawData.map((item) => ({
-			id: item.id,
-			name: item.name,
-			group: item.group,
-			created_at: item.created_at,
-			updated_at: item.updated_at,
-		}));
-
-		const totalCount = await database.$count(
-			permissionsTable,
-			finalWhereCondition,
-		);
-
-		return {
-			data,
-			meta: {
-				page,
+		const [rows, totalCount] = await Promise.all([
+			database.query.permissions.findMany({
+				where,
+				orderBy:
+					queryParam.sortDirection === "asc"
+						? asc(orderColumn)
+						: desc(orderColumn),
 				limit,
-				totalCount,
-			},
-		};
-	}
-
-	async getDetail(id: string, tx?: DbTransaction): Promise<PermissionList> {
-		const database = tx || this.dbInstance;
-		const permission = await database.query.permissions.findFirst({
-			where: and(eq(permissionsTable.id, id)),
-			columns: {
-				id: true,
-				name: true,
-				group: true,
-				created_at: true,
-				updated_at: true,
-			},
-		});
-
-		if (!permission) {
-			throw new NotFoundError("Permission not found");
-		}
+				offset,
+			}),
+			database.$count(permissionsTable, where),
+		]);
 
 		return {
-			id: permission.id,
-			name: permission.name,
-			group: permission.group,
-			created_at: permission.created_at,
-			updated_at: permission.updated_at,
+			data: rows.map(toPermissionList),
+			meta: { page, limit, totalCount },
 		};
 	}
 
-	async create(
-		data: { name: string[]; group: string },
+	async findById(
+		id: string,
+		tx?: DbTransaction,
+	): Promise<PermissionList | null> {
+		const database = tx || this.dbInstance;
+		const row = await database.query.permissions.findFirst({
+			where: eq(permissionsTable.id, id),
+		});
+		return row ? toPermissionList(row) : null;
+	}
+
+	async findByName(
+		name: string,
+		excludeId?: string,
+		tx?: DbTransaction,
+	): Promise<{ id: string } | null> {
+		const database = tx || this.dbInstance;
+		const row = await database.query.permissions.findFirst({
+			where: and(
+				eq(permissionsTable.name, name),
+				excludeId ? ne(permissionsTable.id, excludeId) : undefined,
+			),
+			columns: { id: true },
+		});
+		return row ?? null;
+	}
+
+	async findExistingByNames(
+		names: string[],
+		tx?: DbTransaction,
+	): Promise<string[]> {
+		if (names.length === 0) return [];
+		const database = tx || this.dbInstance;
+		const rows = await database.query.permissions.findMany({
+			where: inArray(permissionsTable.name, names),
+			columns: { name: true },
+		});
+		return rows.map((row) => row.name);
+	}
+
+	async countExisting(ids: string[], tx?: DbTransaction): Promise<number> {
+		if (ids.length === 0) return 0;
+		const database = tx || this.dbInstance;
+		return await database.$count(
+			permissionsTable,
+			inArray(permissionsTable.id, ids),
+		);
+	}
+
+	async createMany(
+		rows: { name: string; group: string }[],
 		tx?: DbTransaction,
 	): Promise<void> {
 		const database = tx || this.dbInstance;
-		const permissionNames: string[] = data.name.map(
-			(name) => `${data.group} ${name}`,
-		);
-
-		const existingPermissions = await database.query.permissions.findMany({
-			where: or(
-				...permissionNames.map((name) => ilike(permissionsTable.name, name)),
-			),
-		});
-
-		if (existingPermissions.length > 0) {
-			throw new UnprocessableEntityError("Some permission already exists", [
-				{
-					field: "name",
-					message: `Some permission is already exist ${existingPermissions
-						.map((perm) => perm.name)
-						.join(", ")}`,
-				},
-			]);
-		}
-
-		const insertedData = data.name.map((name) => ({
-			name: `${data.group} ${name}`,
-			group: data.group,
-		}));
-
-		await database.insert(permissionsTable).values(insertedData);
+		await database.insert(permissionsTable).values(rows);
 	}
 
 	async update(
@@ -196,67 +201,27 @@ export class PermissionRepository {
 		tx?: DbTransaction,
 	): Promise<void> {
 		const database = tx || this.dbInstance;
-		const permission = await database.query.permissions.findFirst({
-			where: eq(permissionsTable.id, id),
-		});
-
-		if (!permission) {
-			throw new NotFoundError("Permission not found");
-		}
-
-		const isPermissionNameAlreadyExist = await database
-			.select()
-			.from(permissionsTable)
-			.where(
-				and(
-					eq(permissionsTable.name, data.name),
-					not(eq(permissionsTable.id, id)),
-				),
-			)
-			.limit(1);
-
-		if (isPermissionNameAlreadyExist.length > 0) {
-			throw new UnprocessableEntityError("Permission name already exists", [
-				{
-					field: "name",
-					message: "Permission name already exists",
-				},
-			]);
-		}
-
 		await database
 			.update(permissionsTable)
-			.set({
-				name: data.name,
-				group: data.group,
-			})
+			.set(data)
 			.where(eq(permissionsTable.id, id));
 	}
 
 	async delete(id: string, tx?: DbTransaction): Promise<void> {
 		const database = tx || this.dbInstance;
-		const permission = await database.query.permissions.findFirst({
-			where: eq(permissionsTable.id, id),
-		});
-
-		if (!permission) {
-			throw new NotFoundError("Permission not found");
-		}
-
 		await database.delete(permissionsTable).where(eq(permissionsTable.id, id));
 	}
 
-	async selectOptions(tx?: DbTransaction): Promise<PermissionSelectOptions[]> {
-		const database = tx || this.dbInstance;
-		const dataPermissions = await database.query.permissions.findMany({
+	async selectOptions(): Promise<PermissionSelectOptions[]> {
+		const rows = await this.dbInstance.query.permissions.findMany({
 			columns: { id: true, name: true, group: true },
+			orderBy: [asc(permissionsTable.group), asc(permissionsTable.name)],
 		});
-		const grouped: Record<string, PermissionSelectOptions["permissions"]> = {};
-		dataPermissions.forEach((perm) => {
-			if (!grouped[perm.group]) grouped[perm.group] = [];
-			grouped[perm.group].push(perm);
-		});
-		return Object.entries(grouped).map(([group, permissions]) => ({
+		const grouped = new Map<string, PermissionSelectOptions["permissions"]>();
+		for (const row of rows) {
+			grouped.set(row.group, [...(grouped.get(row.group) ?? []), row]);
+		}
+		return [...grouped.entries()].map(([group, permissions]) => ({
 			group,
 			permissions,
 		}));

@@ -1,5 +1,3 @@
-# version: "3.8"
-
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:23.12
@@ -9,16 +7,13 @@ services:
       - "8123:8123"
       - "9000:9000"
     environment:
-      CLICKHOUSE_DB: app
-      CLICKHOUSE_USER: app
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-app}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-app}
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      CLICKHOUSE_PASSWORD: secret
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-secret}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - clickhouse_logs:/var/log/clickhouse-server
-      # - ./infra/clickhouse/config.xml:/etc/clickhouse-server/config.xml
-      # - ./infra/clickhouse/users.xml:/etc/clickhouse-server/users.xml
-      # - ./infra/clickhouse/init-scripts:/docker-entrypoint-initdb.d
     ulimits:
       nproc: 65535
       nofile:
@@ -38,9 +33,9 @@ services:
     container_name: fastify-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: hono_clean
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-clean_fastify}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -49,7 +44,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -58,20 +53,58 @@ services:
     image: redis:8-alpine
     container_name: fastify-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass password123
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-password123}
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
     networks:
       - app_network
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        [
+          "CMD-SHELL",
+          'redis-cli -a "${REDIS_PASSWORD:-password123}" ping | grep PONG',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # App config comes from .env. Inside the compose network use service hostnames:
+  #   DATABASE_URL=postgresql://<user>:<pass>@postgres:5432/<db>
+  #   REDIS_HOST=redis, CLICKHOUSE_HOST=http://clickhouse:8123
+  app:
+    build:
+      context: .
+      target: release
+    container_name: fastify-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${APP_PORT:-3000}:${APP_PORT:-3000}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  worker:
+    build:
+      context: .
+      target: release
+    container_name: fastify-worker
+    restart: unless-stopped
+    command: ["src/bull/index.ts"]
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
