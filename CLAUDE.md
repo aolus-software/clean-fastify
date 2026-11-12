@@ -91,6 +91,11 @@ source), in order: `@fastify/jwt`, `@fastify/redis`, the Zod compilers, the `ext
 - **UserInformation is cached** (`user:<id>`, 1 hour) by `SessionService`. Any write that changes a
   user's status, roles, permissions, password or deletion must call `forgetUsers` / `revokeSessions`;
   role and permission edits invalidate every holder.
+- **Select-option lists are cached** (`PermissionSelectOptionsCacheKey()` / `RoleSelectOptionsCacheKey()`,
+  1 hour) by `SelectOptionService`; every role or permission create, update or delete calls its `forget()`.
+- **The pg pool is per process** (`DB_POOL_*`, plus an `error` listener so an idle-client failure is
+  logged, not fatal). `DB_LOG_QUERIES=true` logs each statement at `debug` (text and parameter count
+  only); the compose postgres logs anything slower than `POSTGRES_SLOW_QUERY_MS`.
 - **Repositories return `null`; services throw.** Existence is `NotFoundError` (404), uniqueness is
   `UnprocessableEntityError` (422). Datatable inputs (unknown filter key/value, bad date) are
   `BadRequestError` (400) from the repository.

@@ -55,6 +55,9 @@ export const usersTable = pgTable(
 		uniqueIndex("users_email_unique_live")
 			.on(table.email)
 			.where(sql`${table.deleted_at} IS NULL`),
+		index("users_created_at_live_index")
+			.on(table.created_at)
+			.where(sql`${table.deleted_at} IS NULL`),
 	],
 );
 

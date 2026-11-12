@@ -42,6 +42,11 @@ three and needs a migration.
   emails are unique at the database level, a soft-deleted user's email is reusable, and the service's
   `findLiveByEmail` check still runs first so the caller gets a 422 rather than a constraint error.
 - `roles_name_unique`, `permissions_name_unique`.
+- `users_created_at_live_index` — partial index on `created_at WHERE deleted_at IS NULL`, the default
+  user list order (`defaultSort = "createdAt"`).
+- `user_roles_role_id_index` and `role_permissions_permission_id_index` — the composite primary keys
+  lead with `user_id` / `role_id`, so lookups by the second column (`findIdsByRole`,
+  `findIdsByPermission`, and the `ON DELETE CASCADE` from `roles` / `permissions`) need their own.
 
 ## Foreign keys
 

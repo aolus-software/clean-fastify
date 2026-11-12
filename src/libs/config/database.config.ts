@@ -8,6 +8,7 @@ interface IDatabaseConfig {
 		idleTimeoutMillis: number;
 		connectionTimeoutMillis: number;
 	};
+	logQueries: boolean;
 }
 
 export const DatabaseConfig: IDatabaseConfig = {
@@ -18,4 +19,5 @@ export const DatabaseConfig: IDatabaseConfig = {
 		idleTimeoutMillis: env.DB_IDLE_TIMEOUT,
 		connectionTimeoutMillis: env.DB_CONNECTION_TIMEOUT,
 	},
+	logQueries: env.DB_LOG_QUERIES,
 };

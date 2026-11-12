@@ -9,7 +9,7 @@ scripts reuse them.
 
 | Bucket | Alias | Belongs here |
 | --- | --- | --- |
-| `libs/cache/` | `@cache` | `Cache` (`get`/`set`/`delete`/`deleteMany`), key builders `UserInformationCacheKey`, `RefreshTokenCacheKey`, `UserInformationCacheTtl` |
+| `libs/cache/` | `@cache` | `Cache` (`get`/`set`/`delete`/`deleteMany`), key builders `UserInformationCacheKey`, `RefreshTokenCacheKey`, `PermissionSelectOptionsCacheKey`, `RoleSelectOptionsCacheKey`, TTLs `UserInformationCacheTtl`, `SelectOptionsCacheTtl` |
 | `libs/config/` | `@config` | `env.config.ts` (the only `process.env` reader) and `AppConfig`, `JwtConfig`, `DatabaseConfig`, `RedisConfig`, `MailConfig`, `corsConfig`, `clickhouseConfig` |
 | `libs/database/` | `@database` | `db`, `client`, Drizzle tables and `UserStatus`, repository classes and their exported allow-lists, `DbTransaction`, `RedisClient`, ClickHouse client |
 | `libs/fastify/default/` | `@fastify-libs` | `StrongPassword`, `paginationLength`, `defaultSort`, token-lifetime functions, upload limits |

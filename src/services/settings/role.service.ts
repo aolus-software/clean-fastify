@@ -15,6 +15,7 @@ import {
 import { injectable } from "tsyringe";
 
 import { SessionService } from "../session.service";
+import { SelectOptionService } from "./select-option.service";
 
 type RoleInput = { name: string; permissionIds: string[] };
 
@@ -25,6 +26,7 @@ export class RoleService {
 		private readonly _permissionRepository: PermissionRepository,
 		private readonly _userRepository: UserRepository,
 		private readonly _sessionService: SessionService,
+		private readonly _selectOptionService: SelectOptionService,
 	) {}
 
 	async findAll(
@@ -48,6 +50,7 @@ export class RoleService {
 		await db.transaction(async (tx) => {
 			await this._roleRepository.create(this.dedupe(data), tx);
 		});
+		await this._selectOptionService.forget();
 	}
 
 	async update(id: string, data: RoleInput): Promise<void> {
@@ -58,6 +61,7 @@ export class RoleService {
 		await db.transaction(async (tx) => {
 			await this._roleRepository.update(id, this.dedupe(data), tx);
 		});
+		await this._selectOptionService.forget();
 		await this._sessionService.forgetUsers(
 			await this._userRepository.findIdsByRole(id),
 		);
@@ -67,6 +71,7 @@ export class RoleService {
 		await this.assertExists(id);
 		const holders = await this._userRepository.findIdsByRole(id);
 		await this._roleRepository.delete(id);
+		await this._selectOptionService.forget();
 		await this._sessionService.forgetUsers(holders);
 	}
 

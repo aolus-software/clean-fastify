@@ -23,13 +23,13 @@ The worker uses the `release` image with the command `src/bull/index.ts`.
 
 `docker-compose.yml` defines:
 
-| Service      | Image / build                                       | Notes                                                                                 |
-| ------------ | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `postgres`   | `postgres:18-alpine`                                | database from `POSTGRES_DB` (default `clean_fastify`), port 5432                      |
-| `redis`      | `redis:8-alpine`                                    | AOF on, `--requirepass ${REDIS_PASSWORD:-password123}`, port 6379                     |
-| `clickhouse` | `clickhouse/clickhouse-server:23.12`                | optional, ports 8123 and 9000                                                         |
-| `app`        | build target `release`                              | `env_file: .env`, publishes `${APP_PORT:-3000}`, waits for healthy postgres and redis |
-| `worker`     | build target `release`, command `src/bull/index.ts` | `env_file: .env`, waits for healthy redis                                             |
+| Service      | Image / build                                       | Notes                                                                                                                                   |
+| ------------ | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `postgres`   | `postgres:18-alpine`                                | database from `POSTGRES_DB` (default `clean_fastify`), port 5432; logs statements slower than `POSTGRES_SLOW_QUERY_MS` (default 100 ms) |
+| `redis`      | `redis:8-alpine`                                    | AOF on, `--requirepass ${REDIS_PASSWORD:-password123}`, port 6379                                                                       |
+| `clickhouse` | `clickhouse/clickhouse-server:23.12`                | optional, ports 8123 and 9000                                                                                                           |
+| `app`        | build target `release`                              | `env_file: .env`, publishes `${APP_PORT:-3000}`, waits for healthy postgres and redis                                                   |
+| `worker`     | build target `release`, command `src/bull/index.ts` | `env_file: .env`, waits for healthy redis                                                                                               |
 
 All services share the `app_network` bridge network. Inside it, the app reaches the databases by
 service name, so for a compose deployment set in `.env`:
