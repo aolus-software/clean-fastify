@@ -59,8 +59,19 @@ make fresh            # drop schema + migrate + seed (dev only, destroys data)
 make reset            # db-generate + db-migrate + db-seed
 ```
 
-There is **no test runner configured**. Don't add `bun test` commands to docs or CI unless you are
-also adding the tests in the same PR.
+Tests run on Bun's built-in runner. Unit tests need nothing; integration tests need a PostgreSQL
+database whose name ends in `_test` and a Redis:
+
+```bash
+docker compose up -d postgres redis
+docker compose exec postgres createdb -U postgres clean_fastify_test
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/clean_fastify_test make test
+make test-coverage    # what CI runs; fails below the total line-coverage gate
+bun test tests/integration/auth.test.ts   # one file
+```
+
+A change to a route or service adds or updates its tests in `tests/integration/`. Debug the API with
+`bun --inspect src/serve.ts`; `LOG_LEVEL=debug DB_LOG_QUERIES=true` logs every SQL statement.
 
 ### Running the whole stack in Docker
 

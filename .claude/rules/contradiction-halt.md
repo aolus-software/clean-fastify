@@ -61,5 +61,8 @@ inside the current change.
 - **`/docs` is off unless `ENABLE_API_DOCS=true`.**
 - **The `.agents/skills/` bundle is vendored.** `.claude/skills` is a symlink to `../.agents/skills`.
   Do not edit it as part of unrelated work.
-- **There are no tests and no test runner.** Do not cite a test as evidence, and do not invent
-  `bun test` commands.
+- **The test suite is thin.** `bun test` covers the toolkits, auth, profile, the user list, RBAC
+  guards and the select-options cache ([testing.md](./testing.md)). A route or service with no test is
+  unverified; do not cite the suite as evidence for code it does not exercise.
+- **Tests never touch a development database.** `resetDatabase()` refuses any database whose name
+  does not end in `_test`; do not relax that check.

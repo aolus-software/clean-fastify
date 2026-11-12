@@ -111,6 +111,17 @@ Methods are fixed to `GET, POST, PATCH, DELETE`; allowed headers to `Content-Typ
 
 The API does not need ClickHouse to boot or to pass `/health`.
 
+## Tests
+
+Read only by `tests/setup.ts` under `bun test`, never by the app. The preload also pins
+`NODE_ENV=development`, `LOG_LEVEL=warn`, `ENABLE_API_DOCS=false`, `DB_LOG_QUERIES=false` and throwaway
+JWT secrets, so a `.env` that `bun test` loads cannot point the suite at development data.
+
+| Variable            | Default                                                            | Purpose                                                                  |
+| ------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `TEST_DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/clean_fastify_test` | Replaces `DATABASE_URL`; the name must end in `_test` or the suite stops |
+| `TEST_REDIS_DB`     | `15`                                                               | Replaces `REDIS_DB`; flushed before each integration file                |
+
 ## Not configurable
 
 - Rate limit: 100 requests per minute per client IP, in `rate-limiting.plugin.ts`. There is no

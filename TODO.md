@@ -77,12 +77,13 @@
 
 ### Testing
 
-- [ ] **Add test infrastructure**
-  - No tests currently exist
-  - Add testing framework (Bun test or Vitest)
-  - Add unit tests for services
-  - Add integration tests for API endpoints
-  - Add E2E tests for critical flows
+- [x] **Add test infrastructure** (issue #16)
+  - `bun test` with unit tests for the toolkits and i18n, integration tests through `app.inject`
+  - CI `test` job against PostgreSQL and Redis services; total line-coverage gate at the 68% baseline
+- [ ] **Raise test coverage**
+  - Unit tests for services; integration tests for the remaining auth flows (verify-email,
+    reset-password), profile updates, user/role/permission CRUD
+  - Raise `MIN_LINE_COVERAGE` in `tests/coverage-gate.ts` as tests land
 
 ### Developer Experience
 
@@ -157,6 +158,6 @@
    - Enhance configuration management
 
 4. **Phase 4** (Quality):
-   - Add testing infrastructure
+   - Raise test coverage
    - Enhance documentation
    - Add Makefile

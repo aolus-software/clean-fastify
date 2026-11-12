@@ -48,6 +48,7 @@ Ordered outside-in, the way a request travels.
 | [rate-limiting.md](./rate-limiting.md) | The global `@fastify/rate-limit` registration and why it keys on `request.ip` |
 | [queue.md](./queue.md) | `src/bull/` — one queue and one worker per file, re-throw for retries |
 | [imports-and-naming.md](./imports-and-naming.md) | Path aliases, import order, file and symbol naming |
+| [testing.md](./testing.md) | `tests/` — `bun test` layout, `app.inject`, the `_test` database guard, mocked mail queue, coverage gate |
 | [commit.md](./commit.md) | Conventional Commits, the pre-commit hook, what never gets committed |
 
 ## How to use

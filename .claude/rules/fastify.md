@@ -39,8 +39,8 @@ separate process, `src/bull/index.ts` ([queue.md](./queue.md)).
 
 Read configuration only through `@config`. `src/libs/config/env.config.ts` validates every variable
 once with envalid; the config objects derive from it. **Never touch `process.env` outside
-`src/libs/config/`** (`drizzle.config.ts` is the tooling exception). `JWT_SECRET` and
-`JWT_REFRESH_SECRET` are required with no default, at least 32 characters, never a known placeholder
+`src/libs/config/`** (`drizzle.config.ts` and the test preload `tests/setup.ts` are the tooling
+exceptions). `JWT_SECRET` and `JWT_REFRESH_SECRET` are required with no default, at least 32 characters, never a known placeholder
 (the `jwtSecret` validator in `env.config.ts`), and must differ; token lifetimes (1d / 7d) live in
 `JwtConfig`.
 
