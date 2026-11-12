@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-server dev-worker build start start-server start-worker lint lint-fix format typecheck db-generate db-migrate db-push db-pull db-studio db-drop db-seed db-clickhouse-migrate db-clickhouse-status fresh reset docker-build docker-up docker-down docker-restart docker-logs docker-ps docker-migrate docker-seed docker-deploy
+.PHONY: help install dev dev-server dev-worker build start start-server start-worker lint lint-fix format typecheck test test-watch test-unit test-integration test-coverage db-generate db-migrate db-push db-pull db-studio db-drop db-seed db-clickhouse-migrate db-clickhouse-status fresh reset docker-build docker-up docker-down docker-restart docker-logs docker-ps docker-migrate docker-seed docker-deploy
 
 # Docker compose derives its project name from the directory name (lowercased);
 # the app network is "<project>_app_network". Override if you renamed the dir:
@@ -31,6 +31,13 @@ help:
 	@echo "    lint-fix            - Fix ESLint issues"
 	@echo "    format              - Format code with Prettier"
 	@echo "    typecheck           - Run TypeScript type checking"
+	@echo ""
+	@echo "  Tests:"
+	@echo "    test                - Run every test (integration needs TEST_DATABASE_URL + Redis)"
+	@echo "    test-watch          - Rerun tests on change"
+	@echo "    test-unit           - Run unit tests (no database)"
+	@echo "    test-integration    - Run integration tests against TEST_DATABASE_URL"
+	@echo "    test-coverage       - Run every test with coverage (69% total line gate)"
 	@echo ""
 	@echo "  Database (PostgreSQL/Drizzle):"
 	@echo "    db-generate         - Generate migration files"
@@ -96,6 +103,22 @@ format:
 
 typecheck:
 	bun run typecheck
+
+# Tests
+test:
+	bun run test
+
+test-watch:
+	bun run test:watch
+
+test-unit:
+	bun run test:unit
+
+test-integration:
+	bun run test:integration
+
+test-coverage:
+	bun run test:coverage
 
 # Database (PostgreSQL/Drizzle)
 db-generate:

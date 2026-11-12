@@ -13,6 +13,8 @@ src/libs/database/postgres/repositories/*.repository.ts   @injectable() classes:
 ```
 
 - Runtime and package manager are Bun: `bun run`, `bunx`. Never npm/pnpm/yarn.
+- Tests use `bun test` (`tests/unit`, `tests/integration` through `app.inject`). Integration tests need
+  `TEST_DATABASE_URL` pointing at a database whose name ends in `_test`, plus Redis.
 - Path aliases: `@config`, `@database`, `@fastify-libs`, `@cache`, `@i18n`, `@types`, `@utils`,
   `@services`, `@routes`, `@bull`. Import from the bucket root.
 - Prettier: tabs, double quotes, semicolons, trailing commas. `simple-import-sort` orders imports.

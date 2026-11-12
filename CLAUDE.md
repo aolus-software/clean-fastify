@@ -30,8 +30,12 @@ bun run format:check
 make typecheck            # tsc --noEmit
 make build                # typecheck + dist/serve.js + dist/worker.js
 
-# Tests
-# No test runner is configured. Do not invent `bun test` commands.
+# Tests (bun test; bunfig.toml preloads tests/setup.ts)
+make test                 # every test; integration needs TEST_DATABASE_URL (name ends in _test) + Redis
+make test-unit            # tests/unit, no database
+make test-integration     # tests/integration via app.inject: migrates, truncates and re-seeds the test db
+make test-coverage        # fails below 69% total line coverage (tests/coverage-gate.ts; what CI runs)
+bun test tests/integration/auth.test.ts   # one file; -t "<name>" for one test
 
 # Database
 make db-generate          # drizzle-kit generate (review the SQL before applying)
@@ -108,6 +112,8 @@ source), in order: `@fastify/jwt`, `@fastify/redis`, the Zod compilers, the `ext
   at least 32 characters, never a known placeholder, and different; startup rejects anything else.
 - **Logs go to stdout and `storage/logs/app.log`**; mail logs never carry the recipient address.
 - **Request bodies are capped at 100 KB** (`bodyLimit` in `src/app.ts`, 413 above it).
+- **Debugging**: `bun --inspect src/serve.ts` runs the API under the debugger; `LOG_LEVEL=debug` with
+  `DB_LOG_QUERIES=true` logs every statement.
 - **Docs are gated** by `ENABLE_API_DOCS` (default `false`): `/docs` and `/docs/openapi.json`.
 - **Mail is queued** after the transaction that minted its token commits (`AuthMailService`); the
   worker is a separate process (`src/bull/index.ts`).
@@ -127,6 +133,7 @@ source), in order: `@fastify/jwt`, `@fastify/redis`, the Zod compilers, the `ext
 - 422 for uniqueness conflicts; 400 for login and token failures and bad datatable input.
 - Every user-facing string is an i18n key in both `en.json` and `id.json`; run `bun run i18n:keys`.
 - Rate limit: global, 100/min per `request.ip`, never keyed on client headers.
+- A route or service change adds or updates its test in `tests/` ([testing rule](.claude/rules/testing.md)).
 - Always in scope: `.claude/rules/contradiction-halt.md` and `.claude/rules/documentation.md`.
 
 ## Adding a new feature module

@@ -124,5 +124,6 @@ Coverage is not optional. If a partial sweep is forced, **say which areas were n
 - **Cite `file:line` for every finding.** No finding without a location.
 - **Explain, don't just point.** A finding a reader must open the code to understand has not been
   written yet.
-- **There is no test runner configured.** Do not report test results, and treat an unguarded
-  invariant with no test as a finding in its own right rather than something you can verify by running.
+- **Tests are not part of the sweep.** Do not run them or report their results
+  ([testing.md](../rules/testing.md) covers them), and treat an unguarded invariant with no test as a
+  finding in its own right rather than something you can verify by running.

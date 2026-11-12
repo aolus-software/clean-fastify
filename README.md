@@ -143,6 +143,16 @@ make format         # Format code with Prettier
 make typecheck      # Run TypeScript type checking
 ```
 
+### Tests
+
+```bash
+make test             # Every test (integration needs TEST_DATABASE_URL and Redis)
+make test-watch       # Rerun on change
+make test-unit        # tests/unit only, no database
+make test-integration # tests/integration only
+make test-coverage    # Every test with coverage, 69% total line gate (what CI runs)
+```
+
 ### Database (PostgreSQL)
 
 ```bash
@@ -224,7 +234,35 @@ must set:
 
 ## Testing
 
-No test runner is configured yet.
+Bun's built-in runner (`bun test`), configured in `bunfig.toml`, which preloads `tests/setup.ts`.
+`tests/unit/` needs nothing running; `tests/integration/` drives the app through Fastify's
+`app.inject()` against a real PostgreSQL and Redis, without opening a port. The integration helpers
+migrate, truncate and re-seed the database, so they refuse any database whose name does not end in
+`_test`. Redis uses db `15` (`TEST_REDIS_DB`) and is flushed. Mail jobs are captured in memory, never
+queued.
+
+```bash
+docker compose up -d postgres redis
+docker compose exec postgres createdb -U postgres clean_fastify_test
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/clean_fastify_test make test
+```
+
+`make test-coverage` writes `coverage/lcov.info` and fails when total line coverage drops below 69%
+(`tests/coverage-gate.ts`), the current baseline. CI runs it with PostgreSQL and Redis services.
+
+### Run, test and debug locally
+
+```bash
+make dev-server                                   # API with hot reload on APP_PORT
+bun --inspect src/serve.ts                        # API under the debugger (open the printed URL)
+bun test tests/integration/auth.test.ts           # one test file
+bun test -t "rotates the refresh token"           # tests whose name matches
+bun --inspect-brk test tests/unit                 # tests under the debugger, paused on start
+LOG_LEVEL=debug DB_LOG_QUERIES=true make dev-server  # verbose logs plus every SQL statement
+```
+
+Logs go to stdout and `storage/logs/app.log`. `bun test` pins `LOG_LEVEL=warn`, `NODE_ENV`, throwaway
+JWT secrets and the database in `tests/setup.ts`, so `.env` cannot point it at your development data.
 
 ## CI/CD
 
@@ -232,6 +270,7 @@ The project includes GitHub Actions workflow for:
 
 - Linting and format check
 - Type checking
+- Unit and integration tests with a total line-coverage gate, against throwaway PostgreSQL and Redis
 - Migration drift check and applying migrations against a throwaway PostgreSQL
 - Building server and worker
 

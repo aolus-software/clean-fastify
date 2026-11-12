@@ -51,8 +51,8 @@
 ## How was this tested?
 
 <!--
-There is no test runner configured in this repo, so say what you actually exercised:
-commands run, endpoints hit, request/response bodies observed. "It builds" is not testing.
+Say what you actually exercised: `make test-coverage` output, tests added, endpoints hit,
+request/response bodies observed. "It builds" is not testing.
 -->
 
 ## Screenshots or output
