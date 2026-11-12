@@ -54,7 +54,7 @@ writes to stdout and `storage/logs/app.log`, and request bodies are capped at 10
 | `@utils` | `ResponseToolkit`, `createSuccessResponseSchema`, `createSuccessPaginationResponseSchema`, `NullSuccessResponseSchema`, `NullCreatedResponseSchema`, `buildDatatableQueryParamsSchema`, the error response schemas, `DatatableToolkit`, `Hash`, `StrToolkit`, `DateToolkit`, `logger` |
 | `@fastify-libs` | `PermissionGuard`, `RoleGuard`, the error classes, `StrongPassword`, `paginationLength`, `defaultSort`, token lifetimes, `injectable`, `container` |
 | `@services` | `SessionService` (cached `UserInformation`, invalidation), `AuthMailService` (tokens + auth mail) |
-| `@cache` | `Cache`, `UserInformationCacheKey`, `RefreshTokenCacheKey` |
+| `@cache` | `Cache`, `UserInformationCacheKey`, `RefreshTokenCacheKey`, `PermissionSelectOptionsCacheKey`, `RoleSelectOptionsCacheKey` |
 | `@types` | `DatatableType`, `FilterField`, `PaginationResponse`, per-entity DTOs |
 
 ## Don't

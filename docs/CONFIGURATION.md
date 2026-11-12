@@ -52,17 +52,22 @@ fixed in `src/libs/config/jwt.config.ts`; there is no expiry variable.
 
 ### Database (PostgreSQL)
 
-| Variable                | Validator | Default                                        | Purpose                                                                 |
-| ----------------------- | --------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
-| `DATABASE_URL`          | str       | `postgres://user:password@localhost:5432/mydb` | Connection string for the app, `drizzle-kit`, the seeders and `db:drop` |
-| `DB_POOL_MIN`           | num       | `2`                                            | `pg` pool minimum                                                       |
-| `DB_POOL_MAX`           | num       | `10`                                           | `pg` pool maximum                                                       |
-| `DB_IDLE_TIMEOUT`       | num       | `30000`                                        | Idle client timeout, ms                                                 |
-| `DB_CONNECTION_TIMEOUT` | num       | `5000`                                         | Connection timeout, ms                                                  |
+| Variable                | Validator | Default                                        | Purpose                                                                                                    |
+| ----------------------- | --------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | str       | `postgres://user:password@localhost:5432/mydb` | Connection string for the app, `drizzle-kit`, the seeders and `db:drop`                                    |
+| `DB_POOL_MIN`           | num       | `2`                                            | `pg` pool minimum                                                                                          |
+| `DB_POOL_MAX`           | num       | `10`                                           | `pg` pool maximum                                                                                          |
+| `DB_IDLE_TIMEOUT`       | num       | `30000`                                        | Idle client timeout, ms                                                                                    |
+| `DB_CONNECTION_TIMEOUT` | num       | `5000`                                         | Connection timeout, ms                                                                                     |
+| `DB_LOG_QUERIES`        | bool      | `false`                                        | Logs each statement at `debug` (text and parameter count, never values); shows only with `LOG_LEVEL=debug` |
 
-`.env.example` also carries `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`. The app does not
-read them; `docker-compose.yml` uses them to provision the `postgres` container, so keep them in sync
-with `DATABASE_URL` (default database `clean_fastify`).
+The pool is per process: the API and the worker each open up to `DB_POOL_MAX` connections.
+
+`.env.example` also carries `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` and
+`POSTGRES_SLOW_QUERY_MS`. The app does not read them; `docker-compose.yml` uses them to provision the
+`postgres` container, so keep the first three in sync with `DATABASE_URL` (default database
+`clean_fastify`). `POSTGRES_SLOW_QUERY_MS` (default `100`) sets `log_min_duration_statement`: every
+statement slower than that many milliseconds goes to the container log; `-1` disables it.
 
 ### Redis
 

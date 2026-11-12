@@ -66,6 +66,7 @@ export const env = cleanEnv(process.env, {
 	DB_POOL_MAX: num({ default: 10 }),
 	DB_IDLE_TIMEOUT: num({ default: 30000 }),
 	DB_CONNECTION_TIMEOUT: num({ default: 5000 }),
+	DB_LOG_QUERIES: bool({ default: false }),
 
 	REDIS_HOST: host({ default: "localhost" }),
 	REDIS_PORT: port({ default: 6379 }),

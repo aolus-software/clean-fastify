@@ -66,6 +66,11 @@ changes what it contains must invalidate it, or the caller keeps old roles for u
 
 Never build a cache key inline; never write `Cache` for user state outside `SessionService`.
 
+Every role or permission create, update or delete also calls `this._selectOptionService.forget()`
+after the write: `SelectOptionService` caches both select-option lists for 3600 s. A direct database
+write (the seeder, `make fresh`) does not, so those lists can lag by up to an hour until Redis is
+flushed.
+
 ## Enumeration-leaky paths stay silent
 
 `resendVerification` and `forgotPassword` return early for an unknown (or already verified) email.

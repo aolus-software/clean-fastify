@@ -5,6 +5,7 @@ import { DatatableType, PaginationResponse, PermissionList } from "@types";
 import { injectable } from "tsyringe";
 
 import { SessionService } from "../session.service";
+import { SelectOptionService } from "./select-option.service";
 
 @injectable()
 export class PermissionService {
@@ -12,6 +13,7 @@ export class PermissionService {
 		private readonly _permissionRepository: PermissionRepository,
 		private readonly _userRepository: UserRepository,
 		private readonly _sessionService: SessionService,
+		private readonly _selectOptionService: SelectOptionService,
 	) {}
 
 	async findAll(
@@ -49,6 +51,7 @@ export class PermissionService {
 		await this._permissionRepository.createMany(
 			names.map((name) => ({ name, group: data.group })),
 		);
+		await this._selectOptionService.forget();
 	}
 
 	/** `name` is stored verbatim, so it must be the full `"<group> <action>"` string. */
@@ -69,6 +72,7 @@ export class PermissionService {
 		}
 
 		await this._permissionRepository.update(id, data);
+		await this._selectOptionService.forget();
 		await this._sessionService.forgetUsers(
 			await this._userRepository.findIdsByPermission(id),
 		);
@@ -78,6 +82,7 @@ export class PermissionService {
 		await this.findOne(id);
 		const holders = await this._userRepository.findIdsByPermission(id);
 		await this._permissionRepository.delete(id);
+		await this._selectOptionService.forget();
 		await this._sessionService.forgetUsers(holders);
 	}
 }
