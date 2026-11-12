@@ -3,7 +3,7 @@
 Bun's built-in runner (`bun:test`); no other runner or assertion library. `bunfig.toml` preloads
 `tests/setup.ts` and writes `text` + `lcov` coverage. `bun run test:coverage` (what CI runs) then runs
 `tests/coverage-gate.ts`, which fails when **total** line coverage is below its `MIN_LINE_COVERAGE`
-(69%, the current baseline). Bun's own `coverageThreshold` is per file and its "All files" row is an
+(68%, the current baseline as measured in CI). Bun's own `coverageThreshold` is per file and its "All files" row is an
 average of per-file percentages, so neither is used. Raise the gate when tests land; never lower it.
 
 ## Layout

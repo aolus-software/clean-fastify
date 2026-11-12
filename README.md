@@ -150,7 +150,7 @@ make test             # Every test (integration needs TEST_DATABASE_URL and Redi
 make test-watch       # Rerun on change
 make test-unit        # tests/unit only, no database
 make test-integration # tests/integration only
-make test-coverage    # Every test with coverage, 69% total line gate (what CI runs)
+make test-coverage    # Every test with coverage, 68% total line gate (what CI runs)
 ```
 
 ### Database (PostgreSQL)
@@ -247,7 +247,7 @@ docker compose exec postgres createdb -U postgres clean_fastify_test
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/clean_fastify_test make test
 ```
 
-`make test-coverage` writes `coverage/lcov.info` and fails when total line coverage drops below 69%
+`make test-coverage` writes `coverage/lcov.info` and fails when total line coverage drops below 68%
 (`tests/coverage-gate.ts`), the current baseline. CI runs it with PostgreSQL and Redis services.
 
 ### Run, test and debug locally

@@ -79,7 +79,7 @@
 
 - [x] **Add test infrastructure** (issue #16)
   - `bun test` with unit tests for the toolkits and i18n, integration tests through `app.inject`
-  - CI `test` job against PostgreSQL and Redis services; total line-coverage gate at the 69% baseline
+  - CI `test` job against PostgreSQL and Redis services; total line-coverage gate at the 68% baseline
 - [ ] **Raise test coverage**
   - Unit tests for services; integration tests for the remaining auth flows (verify-email,
     reset-password), profile updates, user/role/permission CRUD

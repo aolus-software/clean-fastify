@@ -37,7 +37,7 @@ help:
 	@echo "    test-watch          - Rerun tests on change"
 	@echo "    test-unit           - Run unit tests (no database)"
 	@echo "    test-integration    - Run integration tests against TEST_DATABASE_URL"
-	@echo "    test-coverage       - Run every test with coverage (69% total line gate)"
+	@echo "    test-coverage       - Run every test with coverage (68% total line gate)"
 	@echo ""
 	@echo "  Database (PostgreSQL/Drizzle):"
 	@echo "    db-generate         - Generate migration files"

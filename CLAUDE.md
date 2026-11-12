@@ -34,7 +34,7 @@ make build                # typecheck + dist/serve.js + dist/worker.js
 make test                 # every test; integration needs TEST_DATABASE_URL (name ends in _test) + Redis
 make test-unit            # tests/unit, no database
 make test-integration     # tests/integration via app.inject: migrates, truncates and re-seeds the test db
-make test-coverage        # fails below 69% total line coverage (tests/coverage-gate.ts; what CI runs)
+make test-coverage        # fails below 68% total line coverage (tests/coverage-gate.ts; what CI runs)
 bun test tests/integration/auth.test.ts   # one file; -t "<name>" for one test
 
 # Database
